@@ -120,7 +120,7 @@ const Footer = () => {
             <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
               <LocationIcon fontSize="small" sx={{ mr: 1 }} />
               <Typography variant="body2">
-                г. Москва, ул. Строителей, д. 1, офис 123
+                г. Алматы, ул. Ауезова, д. 69, офис 420
               </Typography>
             </Box>
             <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
@@ -130,7 +130,7 @@ const Footer = () => {
                 color="inherit"
                 underline="hover"
               >
-                +7 (495) 123-45-67
+                +7 (700) 700 0007
               </Link>
             </Box>
             <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
@@ -140,7 +140,7 @@ const Footer = () => {
                 color="inherit"
                 underline="hover"
               >
-                info@строймастер.рф
+                info@helpdesk.kz
               </Link>
             </Box>
             <Typography variant="body2" sx={{ mt: 2 }}>
