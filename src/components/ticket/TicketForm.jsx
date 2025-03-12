@@ -489,7 +489,7 @@ const TicketForm = ({ onSubmitSuccess }) => {
               </Grid>
 
               {/* File Attachments */}
-              <Grid item xs={12}>
+              {/* <Grid item xs={12}>
                 <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'medium' }}>
                   Прикрепить файлы (опционально)
                 </Typography>
@@ -541,7 +541,7 @@ const TicketForm = ({ onSubmitSuccess }) => {
                     </Card>
                   </Box>
                 )}
-              </Grid>
+              </Grid> */}
               
               <Grid item xs={12}>
                 <Button
