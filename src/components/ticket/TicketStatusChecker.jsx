@@ -10,15 +10,17 @@ import {
   CircularProgress,
   Alert,
   Chip,
-  Grid
+  Grid,
+  Card,
+  CardContent
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { ticketsApi } from '../../api/tickets';
 import { formatDate } from '../../utils/dateUtils';
 
-// Компонент для отображения данных найденного тикета
+// Component to display found ticket information
 const TicketInfo = ({ ticket }) => {
-  // Функция для получения текста статуса тикета на русском языке
+  // Function to get status text in Russian
   const getStatusText = (status) => {
     const statusMap = {
       'new': 'Новый',
@@ -31,7 +33,7 @@ const TicketInfo = ({ ticket }) => {
     return statusMap[status] || status;
   };
 
-  // Функция для получения цвета статуса
+  // Function to get status color
   const getStatusColor = (status) => {
     const colorMap = {
       'new': 'info',
@@ -44,7 +46,7 @@ const TicketInfo = ({ ticket }) => {
     return colorMap[status] || 'default';
   };
 
-  // Функция для получения текста приоритета на русском языке
+  // Function to get priority text in Russian
   const getPriorityText = (priority) => {
     const priorityMap = {
       'low': 'Низкий',
@@ -55,7 +57,7 @@ const TicketInfo = ({ ticket }) => {
     return priorityMap[priority] || priority;
   };
 
-  // Функция для получения цвета приоритета
+  // Function to get priority color
   const getPriorityColor = (priority) => {
     const colorMap = {
       'low': 'success',
@@ -125,7 +127,7 @@ const TicketInfo = ({ ticket }) => {
   );
 };
 
-// Основной компонент для проверки статуса тикета
+// Main component for checking ticket status
 const TicketStatusChecker = () => {
   const [ticketId, setTicketId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -202,7 +204,7 @@ const TicketStatusChecker = () => {
         </Box>
       </Box>
       
-      {/* Отображаем найденный тикет или сообщение об отсутствии */}
+      {/* Display found ticket or message */}
       {ticket ? (
         <TicketInfo ticket={ticket} />
       ) : !error && !loading && (
