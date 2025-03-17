@@ -23,11 +23,27 @@ import {
   Schedule as ScheduleIcon,
   Person as PersonIcon,
   Email as EmailIcon,
-  Phone as PhoneIcon
+  Phone as PhoneIcon,
+  Home as HomeIcon,
+  LocationOn as LocationIcon,
+  AspectRatio as AreaIcon
 } from '@mui/icons-material';
 import { ticketsApi } from '../api/tickets';
 import { formatDate, formatRelativeTime } from '../utils/dateUtils';
 import { isTicketActionable } from '../utils/validationUtils';
+// Import formatter utilities or create them inline
+const formatPropertyType = (propertyType) => {
+  const propertyTypeMap = {
+    'apartment': 'Квартира',
+    'house': 'Частный дом',
+    'office': 'Офис',
+    'commercial': 'Коммерческое помещение',
+    'land': 'Земельный участок',
+    'other': 'Другое'
+  };
+  
+  return propertyTypeMap[propertyType] || propertyType;
+};
 import ChatWindow from '../components/chat/ChatWindow';
 
 const TicketDetailPage = () => {
@@ -192,6 +208,13 @@ const TicketDetailPage = () => {
     );
   }
 
+  // Извлечение данных о свойстве объекта
+  const propertyInfo = ticket.metadata?.property || {
+    type: ticket.property_type,
+    address: ticket.property_address,
+    area: ticket.property_area
+  };
+
   return (
     <Container sx={{ py: 4 }}>
       {/* Навигационные хлебные крошки */}
@@ -292,39 +315,82 @@ const TicketDetailPage = () => {
             )}
           </Paper>
           
-          {/* Информация о заявителе */}
-          {requester && (
-            <Card sx={{ mb: 3 }}>
-              <CardContent>
-                <Typography variant="h6" component="h3" gutterBottom>
-                  Информация о заявителе
-                </Typography>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                  <Typography variant="body1">
-                    {requester.full_name}
-                  </Typography>
-                </Box>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                  <Typography variant="body1">
-                    {requester.email}
-                  </Typography>
-                </Box>
-                
-                {requester.phone && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <PhoneIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body1">
-                      {requester.phone}
+          {/* Информация о заявителе и объекте */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            {/* Информация о заявителе */}
+            {requester && (
+              <Grid item xs={12} sm={6}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Typography variant="h6" component="h3" gutterBottom>
+                      Информация о заявителе
                     </Typography>
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
-          )}
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <PersonIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                      <Typography variant="body1">
+                        {requester.full_name}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                      <Typography variant="body1">
+                        {requester.email}
+                      </Typography>
+                    </Box>
+                    
+                    {requester.phone && (
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <PhoneIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="body1">
+                          {requester.phone}
+                        </Typography>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+            
+            {/* Информация об объекте */}
+            <Grid item xs={12} sm={requester ? 6 : 12}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h6" component="h3" gutterBottom>
+                    Информация об объекте
+                  </Typography>
+                  
+                  {propertyInfo.type && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <HomeIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                      <Typography variant="body1">
+                        Тип: {formatPropertyType(propertyInfo.type)}
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {propertyInfo.address && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <LocationIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                      <Typography variant="body1">
+                        Адрес: {propertyInfo.address}
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {propertyInfo.area && (
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <AreaIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                      <Typography variant="body1">
+                        Площадь: {propertyInfo.area} м²
+                      </Typography>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
           
           {/* Дополнительная информация */}
           <Card>
