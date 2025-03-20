@@ -91,12 +91,12 @@ function App() {
         <Router>
           <Header />
           <main style={{ minHeight: 'calc(100vh - 180px)' }}>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/tickets/:id" element={<TicketDetailPage />} />
-              <Route path="/chat/:id" element={<ChatPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
+          <Routes>
+  <Route path="/" element={<HomePage />} />
+  <Route path="/tickets/:id" element={<TicketDetailPage />} />
+  <Route path="/redirect/ticket/:id" element={<EmailRedirect />} />
+  <Route path="*" element={<NotFoundPage />} />
+</Routes>
           </main>
           <Footer />
         </Router>

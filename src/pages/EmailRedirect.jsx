@@ -1,43 +1,27 @@
-// src/pages/EmailRedirect.jsx
 import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Typography, CircularProgress, Box } from '@mui/material';
+import { CircularProgress, Box, Typography } from '@mui/material';
 
-/**
- * Component for redirecting from email links to the appropriate page
- * This handles links from email notifications and redirects to the chat page
- */
 const EmailRedirect = () => {
-  const { type, id } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // We'll redirect after a small delay to show the loading indicator
+    // Redirect to ticket page after a brief delay
     const timer = setTimeout(() => {
-      if (type === 'ticket') {
-        // For ticket links, redirect to the chat page
-        navigate(`/chat/${id}`);
-      } else {
-        // Default fallback is to the ticket detail page
-        navigate(`/tickets/${id}`);
-      }
+      navigate(`/tickets/${id}`);
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [type, id, navigate]);
+  }, [id, navigate]);
 
   return (
-    <Container maxWidth="sm" sx={{ textAlign: 'center', py: 8 }}>
-      <Box sx={{ mb: 4 }}>
-        <CircularProgress size={60} />
-      </Box>
-      <Typography variant="h5" gutterBottom>
-        Перенаправление...
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 8 }}>
+      <CircularProgress />
+      <Typography variant="h6" mt={2}>
+        Перенаправление к заявке #{id}...
       </Typography>
-      <Typography variant="body1" color="text.secondary">
-        Вы будете перенаправлены на страницу чата для заявки #{id}
-      </Typography>
-    </Container>
+    </Box>
   );
 };
 
