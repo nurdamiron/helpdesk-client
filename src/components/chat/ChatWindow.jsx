@@ -6,89 +6,109 @@ import {
   Typography,
   TextField,
   Button,
-  Avatar,
   CircularProgress,
   Divider,
-  IconButton,
-  Alert
+  Alert,
+  Badge
 } from '@mui/material';
 import {
-  Send as SendIcon,
-  Attachment as AttachmentIcon,
-  InsertDriveFile as FileIcon,
-  Image as ImageIcon,
-  Download as DownloadIcon
+  Send as SendIcon
 } from '@mui/icons-material';
-import { formatDate, formatRelativeTime } from '../../utils/dateUtils';
+import { formatDate } from '../../utils/dateUtils';
+import wsService from '../../services/WebSocketService';
+import MessageItem from './MessageItem';
+import AttachmentUpload from './AttachmentUpload';
+import { ticketsApi } from '../../api/tickets';
 
-// This is a simplified version of the api service - you'd need to implement this
-const ticketsApi = {
-  getMessages: async (ticketId) => {
-    // Fetch messages for the ticket
-    try {
-      const response = await fetch(`/api/tickets/${ticketId}/messages`);
-      const data = await response.json();
-      return data.messages || [];
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      throw error;
-    }
-  },
-  
-  sendMessage: async (ticketId, messageData) => {
-    // Send a new message
-    try {
-      const response = await fetch(`/api/tickets/${ticketId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(messageData)
-      });
-      const data = await response.json();
-      return data.message || data;
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    }
-  },
-  
-  uploadAttachment: async (ticketId, file) => {
-    // Upload a file attachment
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await fetch(`/api/tickets/${ticketId}/attachments`, {
-        method: 'POST',
-        body: formData
-      });
-      const data = await response.json();
-      return data.attachment || data;
-    } catch (error) {
-      console.error('Error uploading attachment:', error);
-      throw error;
-    }
-  }
-};
-
+/**
+ * Компонент окна чата для обмена сообщениями по заявке
+ * Өтінім бойынша хабарлама алмасуға арналған чат терезесінің компоненті
+ * 
+ * @param {Object} props - Свойства компонента
+ * @param {string|number} props.ticketId - ID заявки
+ * @param {string} props.userEmail - Email пользователя
+ * @returns {JSX.Element} Компонент окна чата
+ */
 const ChatWindow = ({ ticketId, userEmail }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState(null);
-  const [attachments, setAttachments] = useState([]);
-  const fileInputRef = useRef(null);
+  const [files, setFiles] = useState([]);
+  const [wsConnected, setWsConnected] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUserId, setTypingUserId] = useState(null);
   const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  
+  // Идентификатор пользователя - в реальном приложении должен быть получен из состояния аутентификации
+  // Пайдаланушы идентификаторы - нақты қолданбада аутентификация күйінен алынуы керек
+  const userId = localStorage.getItem('userId') || '1'; 
 
-  // Fetch messages when component mounts
+  // Инициализация WebSocket при монтировании
+  // Компонент монтаждау кезінде WebSocket инициализациялау
+  useEffect(() => {
+    // Подключаемся к WebSocket серверу
+    // WebSocket серверіне қосыламыз
+    wsService.init(userId, 'requester');
+    
+    // Подписываемся на статус соединения
+    // Байланыс күйіне жазыламыз
+    const unsubscribeConnection = wsService.subscribeToConnectionStatus(setWsConnected);
+    
+    // Подписываемся на новые сообщения
+    // Жаңа хабарламаларға жазыламыз
+    const unsubscribeMessages = wsService.subscribeToMessages(ticketId, (message) => {
+      setMessages(prev => [...prev, message]);
+      // Если сообщение не от нас, отправляем статус прочитано
+      // Егер хабарлама бізден болмаса, оқылды күйін жіберу
+      if (message.sender.id !== userId) {
+        wsService.sendMessageStatus(message.id, 'read');
+      }
+    });
+    
+    // Подписываемся на обновления статусов сообщений
+    // Хабарлама күйінің жаңартуларына жазыламыз
+    const unsubscribeStatuses = wsService.subscribeToStatusUpdates(ticketId, (messageId, status) => {
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId ? { ...msg, status } : msg
+      ));
+    });
+    
+    // Подписываемся на индикаторы набора текста
+    // Мәтін теру индикаторларына жазыламыз
+    const unsubscribeTyping = wsService.subscribeToTypingIndicators(ticketId, (userId, isTyping) => {
+      setIsTyping(isTyping);
+      setTypingUserId(isTyping ? userId : null);
+    });
+    
+    // Отписываемся при размонтировании
+    // Компонент өшірілгенде жазылымнан бас тартамыз
+    return () => {
+      unsubscribeConnection();
+      unsubscribeMessages();
+      unsubscribeStatuses();
+      unsubscribeTyping();
+      wsService.disconnect();
+    };
+  }, [ticketId, userId]);
+
+  // Загружаем историю сообщений при монтировании и изменении ticketId
+  // Компонент монтаждалғанда және ticketId өзгергенде хабарлама тарихын жүктейміз
   useEffect(() => {
     const fetchMessages = async () => {
       try {
         setLoading(true);
-        const data = await ticketsApi.getMessages(ticketId);
-        setMessages(Array.isArray(data) ? data : []);
+        const response = await ticketsApi.getTicketMessages(ticketId);
+        
+        if (response && response.messages) {
+          setMessages(response.messages);
+          // Отмечаем все сообщения как прочитанные
+          // Барлық хабарламаларды оқылды деп белгілейміз
+          ticketsApi.markMessagesAsRead(ticketId);
+        }
+        
         setError(null);
       } catch (err) {
         console.error('Error fetching messages:', err);
@@ -103,58 +123,100 @@ const ChatWindow = ({ ticketId, userEmail }) => {
     }
   }, [ticketId]);
 
-  // Scroll to bottom when messages change
+  // Прокрутка к последнему сообщению при изменении списка сообщений
+  // Хабарламалар тізімі өзгергенде соңғы хабарламаға айналдыру
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  /**
+   * Прокрутка к последнему сообщению
+   * Соңғы хабарламаға айналдыру
+   */
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Handle sending a message
+  /**
+   * Обработчик изменения текста сообщения
+   * Хабарлама мәтінінің өзгеруін өңдеуші
+   * 
+   * @param {Event} e - Событие изменения
+   */
+  const handleMessageChange = (e) => {
+    setMessage(e.target.value);
+    
+    // Отправка индикатора набора текста
+    // Мәтін теру индикаторын жіберу
+    if (wsConnected) {
+      wsService.sendTypingStatus(ticketId, true);
+      
+      // Сбрасываем предыдущий таймаут и устанавливаем новый
+      // Алдыңғы таймаутты тазалап, жаңасын орнатамыз
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        wsService.sendTypingStatus(ticketId, false);
+      }, 3000);
+    }
+  };
+
+  /**
+   * Отправка сообщения
+   * Хабарламаны жіберу
+   * 
+   * @param {Event} e - Событие отправки формы
+   */
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
-    if (!message.trim() && attachments.length === 0) return;
+    if (!message.trim() && files.length === 0) return;
 
     try {
       setSending(true);
       
-      // Upload attachments first if any
+      // Отменяем индикатор набора текста
+      // Мәтін теру индикаторын болдырмаймыз
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      wsService.sendTypingStatus(ticketId, false);
+      
+      // Загружаем вложения сначала, если они есть
+      // Егер тіркемелер болса, алдымен оларды жүктейміз
       const uploadedAttachments = [];
-      if (attachments.length > 0) {
-        for (const file of attachments) {
-          const attachment = await ticketsApi.uploadAttachment(ticketId, file);
-          uploadedAttachments.push(attachment);
+      if (files.length > 0) {
+        for (const file of files) {
+          try {
+            const response = await ticketsApi.uploadAttachment(ticketId, file);
+            if (response && response.attachment) {
+              uploadedAttachments.push(response.attachment.id);
+            }
+          } catch (fileErr) {
+            console.error('Error uploading file:', fileErr);
+          }
         }
       }
-
-      // Prepare message data
-      const messageData = {
-        content: message.trim(),
-        attachments: uploadedAttachments.map(a => a.id),
-        // Include email notification flag
-        notify_email: true
-      };
-
-      // Send the message
-      const response = await ticketsApi.sendMessage(ticketId, messageData);
       
-      // Update messages state
-      if (response) {
-        setMessages(prev => [...prev, {
-          id: response.id || Date.now(),
+      // Если подключен WebSocket, отправляем через него
+      // Егер WebSocket қосылған болса, сол арқылы жіберу
+      if (wsConnected) {
+        wsService.sendChatMessage(ticketId, message.trim(), uploadedAttachments);
+      } else {
+        // Если WebSocket недоступен, отправляем через REST API
+        // Егер WebSocket қолжетімді болмаса, REST API арқылы жіберу
+        await ticketsApi.addMessage(ticketId, {
           content: message.trim(),
-          sender_type: 'requester',
-          created_at: new Date().toISOString(),
           attachments: uploadedAttachments
-        }]);
+        });
       }
       
-      // Clear form
+      // Очищаем форму
+      // Форманы тазалаймыз
       setMessage('');
-      setAttachments([]);
+      setFiles([]);
       setError(null);
     } catch (err) {
       console.error('Error sending message:', err);
@@ -164,131 +226,49 @@ const ChatWindow = ({ ticketId, userEmail }) => {
     }
   };
 
-  // Handle file attachment
-  const handleAttachmentClick = () => {
-    fileInputRef.current.click();
-  };
-
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setAttachments([...attachments, ...files]);
-    e.target.value = null; // Reset to allow selecting the same file again
-  };
-
-  const removeAttachment = (index) => {
-    setAttachments(attachments.filter((_, i) => i !== index));
-  };
-
-  // Determine message sender type
-  const isMessageFromStaff = (senderType) => {
-    return senderType === 'staff';
-  };
-
-  // Render a message
-  const renderMessage = (message, index) => {
-    const isStaff = isMessageFromStaff(message.sender_type);
-    
-    return (
-      <Box
-        key={message.id || index}
-        sx={{
-          display: 'flex',
-          flexDirection: isStaff ? 'row' : 'row-reverse',
-          mb: 2,
-        }}
-      >
-        <Avatar
-          sx={{
-            bgcolor: isStaff ? 'primary.main' : 'secondary.main',
-            mr: isStaff ? 1 : 0,
-            ml: isStaff ? 0 : 1
-          }}
-        >
-          {isStaff ? 'S' : 'Я'}
-        </Avatar>
-        
-        <Box
-          sx={{
-            maxWidth: '70%',
-            backgroundColor: isStaff ? '#f0f0f0' : '#e3f2fd',
-            p: 2,
-            borderRadius: 2,
-            borderTopLeftRadius: isStaff ? 0 : 2,
-            borderTopRightRadius: isStaff ? 2 : 0,
-          }}
-        >
-          <Typography variant="body1">
-            {message.content || message.body}
-          </Typography>
-          
-          {/* Render attachments if any */}
-          {message.attachments && message.attachments.length > 0 && (
-            <Box sx={{ mt: 1 }}>
-              {message.attachments.map((attachment, i) => (
-                <Box
-                  key={i}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    bgcolor: 'rgba(0, 0, 0, 0.04)',
-                    p: 1,
-                    borderRadius: 1,
-                    mb: 0.5
-                  }}
-                >
-                  {attachment.file_type?.startsWith('image/') ? 
-                    <ImageIcon fontSize="small" sx={{ mr: 1 }} /> : 
-                    <FileIcon fontSize="small" sx={{ mr: 1 }} />}
-                  <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                    {attachment.file_name || attachment.fileName}
-                  </Typography>
-                  <IconButton
-                    size="small"
-                    href={attachment.url || `/uploads/${attachment.file_path}`}
-                    download
-                    target="_blank"
-                  >
-                    <DownloadIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              ))}
-            </Box>
-          )}
-          
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ display: 'block', mt: 1, textAlign: 'right' }}
-          >
-            {formatDate(message.created_at)}
-          </Typography>
-        </Box>
-      </Box>
-    );
-  };
-
   return (
     <Paper elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
+      {/* Заголовок */}
+      {/* Тақырып */}
+      <Box sx={{ 
+        p: 2, 
+        bgcolor: 'primary.main', 
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
         <Typography variant="h6">Обсуждение заявки</Typography>
+        {wsConnected ? (
+          <Badge color="success" variant="dot" sx={{ '& .MuiBadge-badge': { right: -4 } }}>
+            <Typography variant="caption">Подключено</Typography>
+          </Badge>
+        ) : (
+          <Badge color="error" variant="dot" sx={{ '& .MuiBadge-badge': { right: -4 } }}>
+            <Typography variant="caption">Офлайн</Typography>
+          </Badge>
+        )}
       </Box>
 
-      {/* Error message */}
+      {/* Сообщение об ошибке */}
+      {/* Қате туралы хабарлама */}
       {error && (
         <Alert severity="error" sx={{ m: 2 }}>
           {error}
         </Alert>
       )}
 
-      {/* Messages area */}
+      {/* Область сообщений */}
+      {/* Хабарламалар аймағы */}
       <Box
         sx={{
           flexGrow: 1,
           p: 2,
           overflowY: 'auto',
           maxHeight: '500px',
-          bgcolor: '#f9f9f9'
+          bgcolor: '#f9f9f9',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         {loading ? (
@@ -302,88 +282,75 @@ const ChatWindow = ({ ticketId, userEmail }) => {
             </Typography>
           </Box>
         ) : (
-          messages.map((message, index) => renderMessage(message, index))
+          messages.map((message, index) => (
+            <MessageItem 
+              key={message.id || index} 
+              message={message} 
+              isStaff={message.sender_type === 'staff'} 
+            />
+          ))
         )}
+
+        {/* Индикатор "печатает..." */}
+        {/* "Теруде..." индикаторы */}
+        {isTyping && (
+          <Box sx={{ p: 2, alignSelf: 'flex-start' }}>
+            <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+              Сотрудник печатает...
+            </Typography>
+          </Box>
+        )}
+        
+        {/* Ссылка для автоматической прокрутки */}
+        {/* Автоматты айналдыру үшін сілтеме */}
         <div ref={messagesEndRef} />
       </Box>
 
-      {/* Attachments preview */}
-      {attachments.length > 0 && (
-        <Box sx={{ p: 2, bgcolor: '#f0f0f0' }}>
-          <Typography variant="subtitle2" gutterBottom>
-            Прикрепленные файлы ({attachments.length}):
-          </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {attachments.map((file, index) => (
-              <Box
-                key={index}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  bgcolor: 'white',
-                  borderRadius: 1,
-                  p: 0.5,
-                  pl: 1
-                }}
-              >
-                {file.type.startsWith('image') ? (
-                  <ImageIcon fontSize="small" sx={{ mr: 0.5 }} />
-                ) : (
-                  <FileIcon fontSize="small" sx={{ mr: 0.5 }} />
-                )}
-                <Typography variant="caption" sx={{ maxWidth: '120px' }} noWrap>
-                  {file.name}
-                </Typography>
-                <IconButton size="small" onClick={() => removeAttachment(index)}>
-                  <Typography variant="caption" color="error">✕</Typography>
-                </IconButton>
-              </Box>
-            ))}
-          </Box>
-        </Box>
-      )}
-
-      {/* Input area */}
+      {/* Форма отправки сообщения */}
+      {/* Хабарлама жіберу формасы */}
       <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
         <form onSubmit={handleSendMessage}>
-          <Box sx={{ display: 'flex' }}>
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              onChange={handleFileChange}
-              multiple
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Прикрепление файлов */}
+            {/* Файлдарды тіркеу */}
+            <AttachmentUpload 
+              files={files} 
+              setFiles={setFiles} 
+              disabled={sending} 
             />
-            <IconButton
-              color="primary"
-              onClick={handleAttachmentClick}
-              disabled={sending}
-            >
-              <AttachmentIcon />
-            </IconButton>
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Введите сообщение..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              size="small"
-              disabled={sending}
-              sx={{ mx: 1 }}
-            />
-            <Button
-              variant="contained"
-              color="primary"
-              type="submit"
-              disabled={sending || (!message.trim() && attachments.length === 0)}
-              endIcon={sending ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
-            >
-              {sending ? "Отправка..." : "Отправить"}
-            </Button>
+            
+            <Box sx={{ display: 'flex', mt: 1 }}>
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="Введите сообщение..."
+                value={message}
+                onChange={handleMessageChange}
+                size="small"
+                disabled={sending}
+                sx={{ mr: 1 }}
+                multiline
+                maxRows={4}
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                type="submit"
+                disabled={sending || (!message.trim() && files.length === 0)}
+                endIcon={sending ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
+              >
+                {sending ? "Отправка..." : "Отправить"}
+              </Button>
+            </Box>
           </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            {userEmail && "Копия сообщения будет отправлена на ваш email"}
-          </Typography>
+          {userEmail && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              {wsConnected ? 
+                "Копия сообщения будет отправлена на ваш email" : 
+                "Соединение с сервером отсутствует. Сообщения могут быть доставлены с задержкой."
+              }
+            </Typography>
+          )}
         </form>
       </Box>
     </Paper>

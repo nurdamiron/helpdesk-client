@@ -2,91 +2,87 @@
 import { useState } from 'react';
 import { 
   Box, 
-  TextField, 
   Button, 
   Typography, 
   Paper,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Select,
-  Grid,
   Snackbar,
   Alert,
   CircularProgress,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
+  Container,
+  Stepper,
+  Step,
+  StepLabel,
   Card,
   CardContent
 } from '@mui/material';
-import { Send as SendIcon, AttachFile as AttachFileIcon } from '@mui/icons-material';
+import { Send as SendIcon } from '@mui/icons-material';
 import { ticketsApi } from '../../api/tickets';
 
-// Categories for construction company tickets
-const CATEGORIES = [
-  { value: 'repair', label: 'Ремонтные работы' },
-  { value: 'plumbing', label: 'Сантехника' },
-  { value: 'electrical', label: 'Электрика' },
-  { value: 'construction', label: 'Строительство' },
-  { value: 'design', label: 'Проектирование' },
-  { value: 'consultation', label: 'Консультация' },
-  { value: 'estimate', label: 'Смета и расчеты' },
-  { value: 'materials', label: 'Материалы' },
-  { value: 'warranty', label: 'Гарантийный случай' },
-  { value: 'other', label: 'Другое' }
+// Импорт подкомпонентов для каждого шага формы
+import ContactInfoStep from './form-steps/ContactInfoStep';
+import TicketDetailsStep from './form-steps/TicketDetailsStep';
+import PropertyInfoStep from './form-steps/PropertyInfoStep';
+import AttachmentsStep from './form-steps/AttachmentsStep';
+import SuccessMessage from './form-steps/SuccessMessage';
+
+/**
+ * Шаги заполнения формы заявки
+ * Өтінім формасын толтыру қадамдары
+ */
+const FORM_STEPS = [
+  { label: 'Контактная информация', key: 'contactInfo' },
+  { label: 'Детали заявки', key: 'ticketDetails' },
+  { label: 'Информация об объекте', key: 'propertyInfo' },
+  { label: 'Вложения', key: 'attachments' }
 ];
 
-// Ticket priorities
-const PRIORITIES = [
-  { value: 'low', label: 'Низкий' },
-  { value: 'medium', label: 'Средний' },
-  { value: 'high', label: 'Высокий' },
-  { value: 'urgent', label: 'Срочный' }
-];
-
-// Property types
-const PROPERTY_TYPES = [
-  { value: 'apartment', label: 'Квартира' },
-  { value: 'house', label: 'Частный дом' },
-  { value: 'office', label: 'Офис' },
-  { value: 'commercial', label: 'Коммерческое помещение' },
-  { value: 'land', label: 'Земельный участок' },
-  { value: 'other', label: 'Другое' },
-];
-
-// Contact methods
-const CONTACT_METHODS = [
-  { value: 'email', label: 'Email' },
-  { value: 'phone', label: 'Телефон' },
-  { value: 'whatsapp', label: 'WhatsApp' },
-];
-
-const TicketForm = ({ onSubmitSuccess }) => {
-  const [formData, setFormData] = useState({
-    subject: '',
-    description: '',
-    category: 'repair',
-    priority: 'medium',
-    email: '',
-    full_name: '',
-    phone: '',
-    preferred_contact: 'email',
-    property_type: 'apartment',
-    property_address: '',
-    property_area: '',
-  });
+/**
+ * Начальное состояние формы
+ * Форманың бастапқы күйі
+ */
+const INITIAL_FORM_STATE = {
+  // Контактная информация
+  full_name: '',
+  email: '',
+  phone: '',
+  preferred_contact: 'email',
   
+  // Информация о заявке
+  subject: '',
+  description: '',
+  category: 'repair',
+  priority: 'medium',
+  
+  // Информация об объекте
+  property_type: 'apartment',
+  property_address: '',
+  property_area: ''
+};
+
+/**
+ * Компонент формы создания заявки
+ * Өтінім жасау формасының компоненті
+ * 
+ * @param {Function} onSubmitSuccess - Функция, вызываемая после успешного создания заявки
+ */
+const TicketForm = ({ onSubmitSuccess }) => {
+  // Состояние формы и управление шагами
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [files, setFiles] = useState([]);
+  const [ticketCreated, setTicketCreated] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success'
   });
-  const [files, setFiles] = useState([]);
-  const [ticketCreated, setTicketCreated] = useState(null);
 
+  /**
+   * Обработчик изменения полей формы
+   * Форма өрістерінің өзгеруін өңдеуші
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevData => ({
@@ -94,99 +90,130 @@ const TicketForm = ({ onSubmitSuccess }) => {
       [name]: value
     }));
     
-    // Clear error when field is changed
+    // Очистка ошибки при изменении поля
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
     }
   };
 
-  const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files || []);
-    
-    // Check file size (max 5MB per file)
-    const validFiles = selectedFiles.filter(file => file.size <= 5 * 1024 * 1024);
-    
-    if (validFiles.length !== selectedFiles.length) {
-      setSnackbar({
-        open: true,
-        message: 'Некоторые файлы не были добавлены, так как их размер превышает 5 МБ',
-        severity: 'warning'
-      });
-    }
-    
-    setFiles(prev => [...prev, ...validFiles]);
-    
-    // Reset input value to allow selecting the same file again
-    e.target.value = '';
+  /**
+   * Обработчик изменения загруженных файлов
+   * Жүктелген файлдардың өзгеруін өңдеуші
+   */
+  const handleFilesChange = (newFiles) => {
+    setFiles(newFiles);
   };
 
-  const removeFile = (index) => {
-    setFiles(files.filter((_, i) => i !== index));
-  };
-
-  const validateForm = () => {
+  /**
+   * Проверка текущего шага формы
+   * Форманың ағымдағы қадамын тексеру
+   */
+  const validateStep = (step) => {
     const newErrors = {};
     
-    // Validate ticket fields
-    if (!formData.subject.trim()) {
-      newErrors.subject = 'Укажите тему обращения';
-    }
-    
-    if (!formData.description.trim()) {
-      newErrors.description = 'Опишите вашу проблему или запрос';
-    } else if (formData.description.trim().length < 10) {
-      newErrors.description = 'Описание должно содержать минимум 10 символов';
-    }
-    
-    // Validate contact details
-    if (!formData.email.trim()) {
-      newErrors.email = 'Укажите email для связи';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-      newErrors.email = 'Укажите корректный email';
-    }
-    
-    if (!formData.full_name.trim()) {
-      newErrors.full_name = 'Укажите ваше имя';
-    }
-    
-    // Validate phone only if provided
-    if (formData.phone.trim() && !/^\+?[0-9\s\-\(\)]{10,15}$/.test(formData.phone.trim())) {
-      newErrors.phone = 'Укажите корректный номер телефона';
-    }
-    
-    // Validate property address unless it's a consultation
-    if (formData.category !== 'consultation' && !formData.property_address.trim()) {
-      newErrors.property_address = 'Укажите адрес объекта';
+    switch (step) {
+      case 0: // Проверка контактной информации
+        if (!formData.full_name.trim()) {
+          newErrors.full_name = 'Укажите ваше имя';
+        }
+        
+        if (!formData.email.trim()) {
+          newErrors.email = 'Укажите email для связи';
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
+          newErrors.email = 'Укажите корректный email';
+        }
+        
+        // Проверка телефона, только если он указан
+        if (formData.phone.trim() && !/^\+?[0-9\s\-\(\)]{10,15}$/.test(formData.phone.trim())) {
+          newErrors.phone = 'Укажите корректный номер телефона';
+        }
+        break;
+        
+      case 1: // Проверка информации о заявке
+        if (!formData.subject.trim()) {
+          newErrors.subject = 'Укажите тему обращения';
+        }
+        
+        if (!formData.description.trim()) {
+          newErrors.description = 'Опишите вашу проблему или запрос';
+        } else if (formData.description.trim().length < 10) {
+          newErrors.description = 'Описание должно содержать минимум 10 символов';
+        }
+        break;
+        
+      case 2: // Проверка информации об объекте
+        // Адрес обязателен только если категория не "консультация"
+        if (formData.category !== 'consultation' && !formData.property_address.trim()) {
+          newErrors.property_address = 'Укажите адрес объекта';
+        }
+        break;
+        
+      case 3: // Проверка вложений - нет обязательных полей
+        break;
+        
+      default:
+        break;
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    // Validate form
-    if (!validateForm()) {
+  /**
+   * Переход к следующему шагу
+   * Келесі қадамға өту
+   */
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => prev + 1);
+    } else {
       setSnackbar({
         open: true,
         message: 'Пожалуйста, заполните все обязательные поля',
         severity: 'error'
       });
-      return;
+    }
+  };
+
+  /**
+   * Переход к предыдущему шагу
+   * Алдыңғы қадамға өту
+   */
+  const handleBack = () => {
+    setCurrentStep(prev => Math.max(0, prev - 1));
+  };
+
+  /**
+   * Отправка формы и создание заявки
+   * Форманы жіберу және өтінім жасау
+   */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Проверка всех шагов формы
+    for (let i = 0; i < FORM_STEPS.length; i++) {
+      if (!validateStep(i)) {
+        setCurrentStep(i);
+        setSnackbar({
+          open: true,
+          message: 'Пожалуйста, заполните все обязательные поля',
+          severity: 'error'
+        });
+        return;
+      }
     }
     
     setLoading(true);
     
     try {
-      // Prepare data for API
+      // Подготовка данных для отправки
       const ticketData = {
         subject: formData.subject,
         description: formData.description,
         priority: formData.priority,
         category: formData.category,
         
-        // Add requester info in metadata
+        // Информация о клиенте в metadata
         metadata: {
           requester: {
             email: formData.email,
@@ -202,56 +229,43 @@ const TicketForm = ({ onSubmitSuccess }) => {
         }
       };
       
-      console.log('Submitting ticket data:', ticketData);
+      console.log('Отправка данных заявки:', ticketData);
       
-      // Send data to server
+      // Отправка данных на сервер
       const response = await ticketsApi.createTicket(ticketData);
       
-      // Upload files if any
+      // Загрузка файлов, если они есть
       if (files.length > 0) {
         for (const file of files) {
           try {
             await ticketsApi.uploadAttachment(response.ticket.id, file);
           } catch (fileErr) {
-            console.error('Error uploading file:', fileErr);
-            // Continue with other files even if one fails
+            console.error('Ошибка загрузки файла:', fileErr);
           }
         }
       }
       
-      // Save created ticket data
+      // Сохранение информации о созданной заявке
       setTicketCreated(response.ticket);
       
-      // Show success message
+      // Показать сообщение об успехе
       setSnackbar({
         open: true,
-        message: `Ваша заявка #${response.ticket.id} успешно отправлена! Мы отправили подтверждение на ваш email.`,
+        message: `Ваша заявка #${response.ticket.id} успешно отправлена!`,
         severity: 'success'
       });
       
-      // Reset form
-      setFormData({
-        subject: '',
-        description: '',
-        category: 'repair',
-        priority: 'medium',
-        email: '',
-        full_name: '',
-        phone: '',
-        preferred_contact: 'email',
-        property_type: 'apartment',
-        property_address: '',
-        property_area: '',
-      });
+      // Сброс формы
+      setFormData(INITIAL_FORM_STATE);
       setFiles([]);
       
-      // Notify parent component
+      // Вызов обработчика успешного создания заявки
       if (onSubmitSuccess) {
         onSubmitSuccess(response.ticket);
       }
       
     } catch (err) {
-      console.error('Error creating ticket:', err);
+      console.error('Ошибка создания заявки:', err);
       
       setSnackbar({
         open: true,
@@ -263,305 +277,126 @@ const TicketForm = ({ onSubmitSuccess }) => {
     }
   };
 
+  /**
+   * Закрытие уведомления
+   * Хабарламаны жабу
+   */
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
+  /**
+   * Создание новой заявки после успешного создания
+   * Сәтті жасалғаннан кейін жаңа өтінім жасау
+   */
+  const handleCreateNewTicket = () => {
+    setTicketCreated(null);
+    setCurrentStep(0);
+  };
+
+  // Если заявка создана, показываем экран успеха
+  if (ticketCreated) {
+    return (
+      <SuccessMessage 
+        ticket={ticketCreated}
+        email={formData.email}
+        onCreateNew={handleCreateNewTicket}
+      />
+    );
+  }
+
   return (
-    <Paper elevation={3} sx={{ p: 3, maxWidth: 800, mx: 'auto', mt: 4 }}>
-      {ticketCreated ? (
-        // Show created ticket info
-        <Box>
-          <Typography variant="h5" component="h2" gutterBottom sx={{ color: 'success.main' }}>
-            Заявка успешно отправлена!
-          </Typography>
+    <Container maxWidth="md">
+      <Paper elevation={3} sx={{ p: 3, my: 4 }}>
+        <Typography variant="h5" component="h2" gutterBottom>
+          Подать заявку
+        </Typography>
+        
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Заполните форму ниже, и наши специалисты свяжутся с вами в ближайшее время.
+          Обязательные поля отмечены звездочкой (*).
+        </Typography>
+        
+        {/* Шаги формы */}
+        <Stepper activeStep={currentStep} sx={{ mb: 4 }}>
+          {FORM_STEPS.map((step, index) => (
+            <Step key={step.key}>
+              <StepLabel>{step.label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+        
+        <Box component="form" onSubmit={handleSubmit} noValidate>
+          {/* Содержимое текущего шага */}
+          <Card variant="outlined" sx={{ mb: 3 }}>
+            <CardContent>
+              {currentStep === 0 && (
+                <ContactInfoStep 
+                  formData={formData}
+                  onChange={handleChange}
+                  errors={errors}
+                />
+              )}
+              
+              {currentStep === 1 && (
+                <TicketDetailsStep 
+                  formData={formData}
+                  onChange={handleChange}
+                  errors={errors}
+                />
+              )}
+              
+              {currentStep === 2 && (
+                <PropertyInfoStep 
+                  formData={formData}
+                  onChange={handleChange}
+                  errors={errors}
+                />
+              )}
+              
+              {currentStep === 3 && (
+                <AttachmentsStep 
+                  files={files}
+                  onFilesChange={handleFilesChange}
+                />
+              )}
+            </CardContent>
+          </Card>
           
-          <Alert severity="success" sx={{ mb: 3 }}>
-            Ваша заявка #{ticketCreated.id} принята в обработку. Наши специалисты свяжутся с вами в ближайшее время.
-            Мы отправили подтверждение на указанный email: <strong>{formData.email}</strong>
-          </Alert>
-          
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-            <Button 
-              variant="contained" 
-              color="primary"
-              onClick={() => setTicketCreated(null)}
-              sx={{ mr: 2 }}
+          {/* Кнопки навигации */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Button
+              variant="outlined"
+              onClick={handleBack}
+              disabled={currentStep === 0 || loading}
             >
-              Создать новую заявку
+              Назад
             </Button>
             
-            <Button 
-              variant="outlined"
-              onClick={() => window.location.href = `/tickets/${ticketCreated.id}`}
-            >
-              Перейти к заявке
-            </Button>
+            {currentStep < FORM_STEPS.length - 1 ? (
+              <Button
+                variant="contained"
+                onClick={handleNext}
+                disabled={loading}
+              >
+                Далее
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={loading}
+                startIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
+              >
+                {loading ? 'Отправка...' : 'Отправить заявку'}
+              </Button>
+            )}
           </Box>
         </Box>
-      ) : (
-        // Show ticket creation form
-        <Box>
-          <Typography variant="h5" component="h2" gutterBottom>
-            Подать заявку
-          </Typography>
-          
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Заполните форму ниже, и наши специалисты свяжутся с вами в ближайшее время.
-            Обязательные поля отмечены звездочкой (*).
-          </Typography>
-          
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            <Grid container spacing={2}>
-              {/* Requester Information */}
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'medium' }}>
-                  Контактная информация
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Ваше имя"
-                  name="full_name"
-                  value={formData.full_name}
-                  onChange={handleChange}
-                  error={!!errors.full_name}
-                  helperText={errors.full_name}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  error={!!errors.email}
-                  helperText={errors.email || "На этот адрес будет отправлено подтверждение"}
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Телефон"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="+7 (___) ___-__-__"
-                  error={!!errors.phone}
-                  helperText={errors.phone}
-                />
-              </Grid>
-              
-
-          
-              {/* Ticket Information */}
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'medium' }}>
-                  Информация о заявке
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Тема"
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  error={!!errors.subject}
-                  helperText={errors.subject}
-                  placeholder="Например: Ремонт ванной комнаты"
-                />
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel id="category-label">Категория</InputLabel>
-                  <Select
-                    labelId="category-label"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    label="Категория"
-                  >
-                    {CATEGORIES.map(option => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel id="priority-label">Приоритет</InputLabel>
-                  <Select
-                    labelId="priority-label"
-                    name="priority"
-                    value={formData.priority}
-                    onChange={handleChange}
-                    label="Приоритет"
-                  >
-                    {PRIORITIES.map(option => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Описание"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  multiline
-                  rows={4}
-                  error={!!errors.description}
-                  helperText={errors.description || 'Пожалуйста, подробно опишите вашу проблему или запрос'}
-                />
-              </Grid>
-              
-              {/* Property Information */}
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'medium' }}>
-                  Информация об объекте {formData.category === 'consultation' && '(опционально)'}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel id="property-type-label">Тип объекта</InputLabel>
-                  <Select
-                    labelId="property-type-label"
-                    name="property_type"
-                    value={formData.property_type}
-                    onChange={handleChange}
-                    label="Тип объекта"
-                  >
-                    {PROPERTY_TYPES.map(option => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-              
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Площадь (м²)"
-                  name="property_area"
-                  type="number"
-                  value={formData.property_area}
-                  onChange={handleChange}
-                  InputProps={{ inputProps: { min: 0 } }}
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
-                <TextField
-                  required={formData.category !== 'consultation'}
-                  fullWidth
-                  label="Адрес объекта"
-                  name="property_address"
-                  value={formData.property_address}
-                  onChange={handleChange}
-                  error={!!errors.property_address}
-                  helperText={errors.property_address}
-                  placeholder="Укажите полный адрес объекта"
-                />
-              </Grid>
-
-              {/* File Attachments */}
-              {/* <Grid item xs={12}>
-                <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 'medium' }}>
-                  Прикрепить файлы (опционально)
-                </Typography>
-                <Button
-                  component="label"
-                  variant="outlined"
-                  startIcon={<AttachFileIcon />}
-                >
-                  Выбрать файлы
-                  <input
-                    type="file"
-                    hidden
-                    multiple
-                    onChange={handleFileChange}
-                  />
-                </Button>
-                
-                {files.length > 0 && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="body2" gutterBottom>
-                      Выбрано файлов: {files.length}
-                    </Typography>
-                    <Card variant="outlined" sx={{ mt: 1 }}>
-                      <CardContent sx={{ py: 1 }}>
-                        {files.map((file, index) => (
-                          <Box 
-                            key={index} 
-                            sx={{ 
-                              display: 'flex', 
-                              justifyContent: 'space-between', 
-                              alignItems: 'center',
-                              py: 1,
-                              borderBottom: index < files.length - 1 ? '1px solid #eee' : 'none'
-                            }}
-                          >
-                            <Typography variant="body2" noWrap sx={{ maxWidth: '80%' }}>
-                              {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                            </Typography>
-                            <Button 
-                              color="error" 
-                              size="small" 
-                              onClick={() => removeFile(index)}
-                            >
-                              Удалить
-                            </Button>
-                          </Box>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  </Box>
-                )}
-              </Grid> */}
-              
-              <Grid item xs={12}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  size="large"
-                  disabled={loading}
-                  startIcon={loading ? <CircularProgress size={20} /> : <SendIcon />}
-                  sx={{ mt: 2 }}
-                  fullWidth
-                >
-                  {loading ? 'Отправка...' : 'Отправить заявку'}
-                </Button>
-              </Grid>
-            </Grid>
-          </Box>
-        </Box>
-      )}
+      </Paper>
       
+      {/* Уведомление */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -577,7 +412,7 @@ const TicketForm = ({ onSubmitSuccess }) => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Paper>
+    </Container>
   );
 };
 
