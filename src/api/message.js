@@ -12,7 +12,8 @@ export const messagesApi = {
    */
   getTicketMessages: async (ticketId) => {
     try {
-      return await api.get(`/tickets/${ticketId}/messages`);
+      const response = await api.get(`/tickets/${ticketId}/messages`);
+      return response;
     } catch (error) {
       console.error(`Error fetching messages for ticket #${ticketId}:`, error);
       throw error;
@@ -22,12 +23,19 @@ export const messagesApi = {
   /**
    * Добавить сообщение к тикету
    * @param {number|string} ticketId - ID тикета
-   * @param {Object} messageData - Данные сообщения
+   * @param {Object} messageData - Данные сообщения (content, attachments)
    * @returns {Promise<Object>} Созданное сообщение
    */
   addMessage: async (ticketId, messageData) => {
     try {
-      return await api.post(`/tickets/${ticketId}/messages`, messageData);
+      // Ensure the structure is correct
+      const data = {
+        content: messageData.content || messageData.body || '',
+        attachments: messageData.attachments || []
+      };
+      
+      const response = await api.post(`/tickets/${ticketId}/messages`, data);
+      return response;
     } catch (error) {
       console.error(`Error adding message to ticket #${ticketId}:`, error);
       throw error;
@@ -41,7 +49,8 @@ export const messagesApi = {
    */
   markMessagesAsRead: async (ticketId) => {
     try {
-      return await api.put(`/tickets/${ticketId}/messages/read`);
+      const response = await api.put(`/tickets/${ticketId}/messages/read`);
+      return response;
     } catch (error) {
       console.error(`Error marking messages as read for ticket #${ticketId}:`, error);
       throw error;
@@ -57,7 +66,8 @@ export const messagesApi = {
    */
   updateMessageStatus: async (ticketId, messageId, status) => {
     try {
-      return await api.put(`/tickets/${ticketId}/messages/${messageId}/status`, { status });
+      const response = await api.put(`/tickets/${ticketId}/messages/${messageId}/status`, { status });
+      return response;
     } catch (error) {
       console.error(`Error updating message #${messageId} status:`, error);
       throw error;
@@ -68,7 +78,7 @@ export const messagesApi = {
    * Загрузить вложение
    * @param {number|string} ticketId - ID тикета
    * @param {File} file - Файл для загрузки
-   * @param {Object} options - Дополнительные опции (onUploadProgress и т.д.)
+   * @param {Object} options - Дополнительные опции
    * @returns {Promise<Object>} Загруженное вложение
    */
   uploadAttachment: async (ticketId, file, options = {}) => {
@@ -76,19 +86,21 @@ export const messagesApi = {
       const formData = new FormData();
       formData.append('file', file);
       
-      // Добавляем любые дополнительные поля
+      // Add any additional fields
       Object.keys(options).forEach(key => {
         if (key !== 'onUploadProgress') {
           formData.append(key, options[key]);
         }
       });
       
-      return await api.post(`/tickets/${ticketId}/attachments`, formData, {
+      const response = await api.post(`/tickets/${ticketId}/attachments`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
         onUploadProgress: options.onUploadProgress
       });
+      
+      return response;
     } catch (error) {
       console.error(`Error uploading attachment to ticket #${ticketId}:`, error);
       throw error;
@@ -97,12 +109,13 @@ export const messagesApi = {
 
   /**
    * Получить непрочитанные сообщения
-   * @param {Object} params - Параметры запроса
+   * @param {Object} params - Параметры запроса (userId, userType)
    * @returns {Promise<Object>} Непрочитанные сообщения
    */
   getUnreadMessages: async (params = {}) => {
     try {
-      return await api.get('/messages/unread', { params });
+      const response = await api.get('/messages/unread', { params });
+      return response;
     } catch (error) {
       console.error('Error fetching unread messages:', error);
       throw error;

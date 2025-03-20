@@ -15,17 +15,34 @@ import { formatDate } from '../../utils/dateUtils';
 
 /**
  * Компонент для отображения отдельного сообщения в чате
- * Чаттағы жеке хабарламаны көрсетуге арналған компонент
  * 
  * @param {Object} props - Свойства компонента
  * @param {Object} props.message - Данные сообщения
- * @param {boolean} props.isStaff - Сообщение от сотрудника
- * @returns {JSX.Element} Компонент сообщения чата
+ * @param {boolean} props.isOwnMessage - Сообщение от текущего пользователя
+ * @param {string} props.userType - Тип текущего пользователя
+ * @returns {JSX.Element} Компонент сообщения
  */
-const MessageItem = ({ message, isStaff }) => {
-  // Определяем тип отправителя сообщения
-  // Хабарлама жіберушінің түрін анықтаймыз
-  const isStaffMessage = isStaff || message.sender_type === 'staff';
+const MessageItem = ({ message, isOwnMessage = false, userType = 'requester' }) => {
+  // Определяем, является ли сообщение от сотрудника
+  const isStaffMessage = message.sender?.type === 'staff' || 
+                         message.sender_type === 'staff' ||
+                         (userType === 'staff' && isOwnMessage) ||
+                         (userType === 'requester' && !isOwnMessage);
+                         
+  // Получаем текст сообщения из разных возможных источников
+  const messageText = message.content || message.body || '';
+  
+  // Получаем имя отправителя
+  const senderName = message.sender?.name || 
+                    (isStaffMessage ? 'Администратор' : 'Клиент');
+  
+  console.log('Message render:', {
+    id: message.id,
+    senderType: message.sender?.type || message.sender_type,
+    isStaffMessage,
+    userType,
+    isOwnMessage
+  });
   
   return (
     <Box
@@ -42,7 +59,7 @@ const MessageItem = ({ message, isStaff }) => {
           ml: isStaffMessage ? 0 : 1
         }}
       >
-        {isStaffMessage ? 'С' : 'К'}
+        {isStaffMessage ? 'C' : 'К'}
       </Avatar>
       
       <Box
@@ -56,19 +73,16 @@ const MessageItem = ({ message, isStaff }) => {
         }}
       >
         {/* Имя отправителя */}
-        {/* Жіберушінің аты */}
         <Typography variant="subtitle2" color="text.secondary">
-          {message.sender?.name || (isStaffMessage ? 'Сотрудник' : 'Клиент')}
+          {senderName}
         </Typography>
         
         {/* Текст сообщения */}
-        {/* Хабарлама мәтіні */}
         <Typography variant="body1">
-          {message.content || message.body || ''}
+          {messageText}
         </Typography>
         
-        {/* Вложения (если есть) */}
-        {/* Тіркемелер (егер бар болса) */}
+        {/* Вложения */}
         {message.attachments && message.attachments.length > 0 && (
           <Box sx={{ mt: 1 }}>
             {message.attachments.map((attachment, i) => (
@@ -103,7 +117,6 @@ const MessageItem = ({ message, isStaff }) => {
         )}
         
         {/* Время отправки и статус */}
-        {/* Жіберу уақыты және күйі */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, alignItems: 'center' }}>
           {message.status && !isStaffMessage && (
             <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>

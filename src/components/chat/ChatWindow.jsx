@@ -1,4 +1,4 @@
-// src/components/chat/ChatWindow.jsx
+// src/components/chat/ChatWindow.jsx - Fix for userType error
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
@@ -9,21 +9,22 @@ import {
   CircularProgress,
   Divider,
   Alert,
-  Badge
+  Badge,
+  IconButton
 } from '@mui/material';
 import {
-  Send as SendIcon
+  Send as SendIcon,
+  Refresh as RefreshIcon,
+  AttachFile as AttachFileIcon
 } from '@mui/icons-material';
 import { formatDate } from '../../utils/dateUtils';
 import wsService from '../../services/WebSocketService';
 import MessageItem from './MessageItem';
-import AttachmentUpload from './AttachmentUpload';
 import { ticketsApi } from '../../api/tickets';
+import { messagesApi } from '../../api/message';
 
 /**
  * Компонент окна чата для обмена сообщениями по заявке
- * Өтінім бойынша хабарлама алмасуға арналған чат терезесінің компоненті
- * 
  * @param {Object} props - Свойства компонента
  * @param {string|number} props.ticketId - ID заявки
  * @param {string} props.userEmail - Email пользователя
@@ -41,50 +42,64 @@ const ChatWindow = ({ ticketId, userEmail }) => {
   const [typingUserId, setTypingUserId] = useState(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
+  
+  // Определяем тип пользователя - по умолчанию это requester (клиент)
+  // В реальном приложении это должно быть получено из состояния аутентификации
+  const [userType] = useState('requester');
   
   // Идентификатор пользователя - в реальном приложении должен быть получен из состояния аутентификации
-  // Пайдаланушы идентификаторы - нақты қолданбада аутентификация күйінен алынуы керек
   const userId = localStorage.getItem('userId') || '1'; 
 
   // Инициализация WebSocket при монтировании
-  // Компонент монтаждау кезінде WebSocket инициализациялау
   useEffect(() => {
-    // Подключаемся к WebSocket серверу
-    // WebSocket серверіне қосыламыз
-    wsService.init(userId, 'requester');
+    console.log('Initializing WebSocket connection for ticket:', ticketId);
+    wsService.init(userId, userType);
     
-    // Подписываемся на статус соединения
-    // Байланыс күйіне жазыламыз
-    const unsubscribeConnection = wsService.subscribeToConnectionStatus(setWsConnected);
-    
-    // Подписываемся на новые сообщения
-    // Жаңа хабарламаларға жазыламыз
-    const unsubscribeMessages = wsService.subscribeToMessages(ticketId, (message) => {
-      setMessages(prev => [...prev, message]);
-      // Если сообщение не от нас, отправляем статус прочитано
-      // Егер хабарлама бізден болмаса, оқылды күйін жіберу
-      if (message.sender.id !== userId) {
-        wsService.sendMessageStatus(message.id, 'read');
+    // Subscribe to connection status
+    const unsubscribeConnection = wsService.subscribeToConnectionStatus((connected) => {
+      console.log('WebSocket connection status changed:', connected);
+      setWsConnected(connected);
+      
+      // If reconnected, check for missed messages
+      if (connected && messages.length > 0) {
+        fetchLatestMessages();
       }
     });
     
-    // Подписываемся на обновления статусов сообщений
-    // Хабарлама күйінің жаңартуларына жазыламыз
+    // Subscribe to new messages
+    const unsubscribeMessages = wsService.subscribeToMessages(ticketId, (newMessage) => {
+      console.log('New message received:', newMessage);
+      setMessages(prev => {
+        // Avoid duplicates
+        if (!prev.some(msg => msg.id === newMessage.id)) {
+          return [...prev, newMessage];
+        }
+        return prev;
+      });
+      
+      // If message is not from us, send read status
+      if (newMessage.sender.type !== userType || newMessage.sender.id !== userId) {
+        wsService.sendMessageStatus(newMessage.id, 'read');
+      }
+    });
+    
+    // Subscribe to status updates
     const unsubscribeStatuses = wsService.subscribeToStatusUpdates(ticketId, (messageId, status) => {
+      console.log(`Message ${messageId} status updated to: ${status}`);
       setMessages(prev => prev.map(msg => 
         msg.id === messageId ? { ...msg, status } : msg
       ));
     });
     
-    // Подписываемся на индикаторы набора текста
-    // Мәтін теру индикаторларына жазыламыз
+    // Subscribe to typing indicators
     const unsubscribeTyping = wsService.subscribeToTypingIndicators(ticketId, (userId, isTyping) => {
+      console.log(`User ${userId} typing status: ${isTyping}`);
       setIsTyping(isTyping);
       setTypingUserId(isTyping ? userId : null);
     });
     
-    // Отписываемся при размонтировании
-    // Компонент өшірілгенде жазылымнан бас тартамыз
+    // Cleanup on unmount
     return () => {
       unsubscribeConnection();
       unsubscribeMessages();
@@ -92,24 +107,32 @@ const ChatWindow = ({ ticketId, userEmail }) => {
       unsubscribeTyping();
       wsService.disconnect();
     };
-  }, [ticketId, userId]);
+  }, [ticketId, userId, userType, messages.length]);
 
   // Загружаем историю сообщений при монтировании и изменении ticketId
-  // Компонент монтаждалғанда және ticketId өзгергенде хабарлама тарихын жүктейміз
   useEffect(() => {
     const fetchMessages = async () => {
       try {
         setLoading(true);
-        const response = await ticketsApi.getTicketMessages(ticketId);
+        setError(null);
+        
+        const response = await ticketsApi.getTicketMessages(ticketId).catch(error => {
+          console.log('Error getting messages, falling back to alternative method');
+          return { messages: [] };
+        });
         
         if (response && response.messages) {
           setMessages(response.messages);
-          // Отмечаем все сообщения как прочитанные
-          // Барлық хабарламаларды оқылды деп белгілейміз
-          ticketsApi.markMessagesAsRead(ticketId);
+          // Trying to mark messages as read
+          try {
+            await ticketsApi.markMessagesAsRead(ticketId);
+          } catch (markError) {
+            console.error('Error marking messages as read:', markError);
+          }
+        } else if (response && response.status === 'success' && response.data) {
+          // Alternative response format
+          setMessages(response.data);
         }
-        
-        setError(null);
       } catch (err) {
         console.error('Error fetching messages:', err);
         setError('Не удалось загрузить сообщения. Пожалуйста, попробуйте позже.');
@@ -124,14 +147,55 @@ const ChatWindow = ({ ticketId, userEmail }) => {
   }, [ticketId]);
 
   // Прокрутка к последнему сообщению при изменении списка сообщений
-  // Хабарламалар тізімі өзгергенде соңғы хабарламаға айналдыру
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   /**
+   * Determine if a message is from the current user
+   * @param {Object} message - The message to check
+   * @returns {boolean} - True if the message is from the current user
+   */
+  const isUserMessage = (message) => {
+    // Check various possible sender properties
+    return (
+      (message.sender?.type === userType) ||
+      (message.sender_type === userType) ||
+      (message.sender?.id === userId) ||
+      (message.sender_id === userId)
+    );
+  };
+
+  /**
+   * Fetch the latest messages to ensure we have the most recent data
+   */
+  const fetchLatestMessages = async () => {
+    try {
+      const response = await ticketsApi.getTicketMessages(ticketId).catch(error => {
+        console.log('Error getting latest messages');
+        return { messages: [] };
+      });
+      
+      if (response && response.messages && response.messages.length > messages.length) {
+        setMessages(response.messages);
+      }
+    } catch (err) {
+      console.error('Error fetching latest messages:', err);
+    }
+  };
+
+  /**
+   * Force reconnection to WebSocket
+   */
+  const handleReconnect = () => {
+    wsService.disconnect();
+    setTimeout(() => {
+      wsService.init(userId, userType);
+    }, 500);
+  };
+
+  /**
    * Прокрутка к последнему сообщению
-   * Соңғы хабарламаға айналдыру
    */
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -139,20 +203,16 @@ const ChatWindow = ({ ticketId, userEmail }) => {
 
   /**
    * Обработчик изменения текста сообщения
-   * Хабарлама мәтінінің өзгеруін өңдеуші
-   * 
    * @param {Event} e - Событие изменения
    */
   const handleMessageChange = (e) => {
     setMessage(e.target.value);
     
     // Отправка индикатора набора текста
-    // Мәтін теру индикаторын жіберу
     if (wsConnected) {
       wsService.sendTypingStatus(ticketId, true);
       
       // Сбрасываем предыдущий таймаут и устанавливаем новый
-      // Алдыңғы таймаутты тазалап, жаңасын орнатамыз
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
@@ -164,9 +224,38 @@ const ChatWindow = ({ ticketId, userEmail }) => {
   };
 
   /**
+   * Handle file button click
+   */
+  const handleAttachmentClick = () => {
+    fileInputRef.current.click();
+  };
+
+  /**
+   * Handle file selection
+   */
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    
+    // Check file size limit (max 5MB per file)
+    const validFiles = selectedFiles.filter(file => file.size <= 5 * 1024 * 1024);
+    
+    if (validFiles.length !== selectedFiles.length) {
+      alert('Некоторые файлы не были добавлены, так как их размер превышает 5 МБ');
+    }
+    
+    setFiles(prev => [...prev, ...validFiles]);
+    e.target.value = '';
+  };
+
+  /**
+   * Remove file from attachments list
+   */
+  const removeFile = (index) => {
+    setFiles(files.filter((_, i) => i !== index));
+  };
+
+  /**
    * Отправка сообщения
-   * Хабарламаны жіберу
-   * 
    * @param {Event} e - Событие отправки формы
    */
   const handleSendMessage = async (e) => {
@@ -177,22 +266,23 @@ const ChatWindow = ({ ticketId, userEmail }) => {
     try {
       setSending(true);
       
-      // Отменяем индикатор набора текста
-      // Мәтін теру индикаторын болдырмаймыз
+      // Cancel typing indicator
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      wsService.sendTypingStatus(ticketId, false);
+      if (wsConnected) {
+        wsService.sendTypingStatus(ticketId, false);
+      }
       
-      // Загружаем вложения сначала, если они есть
-      // Егер тіркемелер болса, алдымен оларды жүктейміз
+      // Upload attachments first, if any
       const uploadedAttachments = [];
       if (files.length > 0) {
         for (const file of files) {
           try {
             const response = await ticketsApi.uploadAttachment(ticketId, file);
-            if (response && response.attachment) {
-              uploadedAttachments.push(response.attachment.id);
+            
+            if (response && (response.attachment?.id || response.id)) {
+              uploadedAttachments.push(response.attachment?.id || response.id);
             }
           } catch (fileErr) {
             console.error('Error uploading file:', fileErr);
@@ -200,24 +290,46 @@ const ChatWindow = ({ ticketId, userEmail }) => {
         }
       }
       
-      // Если подключен WebSocket, отправляем через него
-      // Егер WebSocket қосылған болса, сол арқылы жіберу
+      // Try to send the message via WebSocket first
+      let messageSent = false;
       if (wsConnected) {
-        wsService.sendChatMessage(ticketId, message.trim(), uploadedAttachments);
-      } else {
-        // Если WebSocket недоступен, отправляем через REST API
-        // Егер WebSocket қолжетімді болмаса, REST API арқылы жіберу
+        messageSent = wsService.sendChatMessage(ticketId, message.trim(), uploadedAttachments);
+      }
+      
+      // If WebSocket fails, use REST API as fallback
+      if (!messageSent) {
         await ticketsApi.addMessage(ticketId, {
-          content: message.trim(),
-          attachments: uploadedAttachments
+          body: message.trim(),
+          attachments: uploadedAttachments,
+          sender_type: userType,
+          sender_id: userId
         });
       }
       
-      // Очищаем форму
-      // Форманы тазалаймыз
+      // Update UI optimistically with a temporary message
+      const tempMessage = {
+        id: `temp-${Date.now()}`,
+        content: message.trim(),
+        sender: {
+          id: userId,
+          type: userType,
+          name: userType === 'requester' ? 'Вы' : 'Администратор'
+        },
+        created_at: new Date().toISOString(),
+        status: 'sending'
+      };
+      
+      setMessages(prev => [...prev, tempMessage]);
+      
+      // Clear form
       setMessage('');
       setFiles([]);
       setError(null);
+      
+      // Fetch latest messages after a short delay
+      setTimeout(() => {
+        fetchLatestMessages();
+      }, 1000);
     } catch (err) {
       console.error('Error sending message:', err);
       setError('Не удалось отправить сообщение. Пожалуйста, попробуйте позже.');
@@ -228,8 +340,7 @@ const ChatWindow = ({ ticketId, userEmail }) => {
 
   return (
     <Paper elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Заголовок */}
-      {/* Тақырып */}
+      {/* Header */}
       <Box sx={{ 
         p: 2, 
         bgcolor: 'primary.main', 
@@ -238,28 +349,33 @@ const ChatWindow = ({ ticketId, userEmail }) => {
         justifyContent: 'space-between',
         alignItems: 'center'
       }}>
-        <Typography variant="h6">Обсуждение заявки</Typography>
-        {wsConnected ? (
-          <Badge color="success" variant="dot" sx={{ '& .MuiBadge-badge': { right: -4 } }}>
-            <Typography variant="caption">Подключено</Typography>
-          </Badge>
-        ) : (
-          <Badge color="error" variant="dot" sx={{ '& .MuiBadge-badge': { right: -4 } }}>
-            <Typography variant="caption">Офлайн</Typography>
-          </Badge>
-        )}
+        <Typography variant="h6">Обсуждение заявки #{ticketId}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {wsConnected ? (
+            <Badge color="success" variant="dot" sx={{ '& .MuiBadge-badge': { right: -4 } }}>
+              <Typography variant="caption">Подключено</Typography>
+            </Badge>
+          ) : (
+            <>
+              <Badge color="error" variant="dot" sx={{ '& .MuiBadge-badge': { right: -4 } }}>
+                <Typography variant="caption" sx={{ mr: 1 }}>Офлайн</Typography>
+              </Badge>
+              <IconButton size="small" color="inherit" onClick={handleReconnect}>
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </>
+          )}
+        </Box>
       </Box>
 
-      {/* Сообщение об ошибке */}
-      {/* Қате туралы хабарлама */}
+      {/* Error message */}
       {error && (
         <Alert severity="error" sx={{ m: 2 }}>
           {error}
         </Alert>
       )}
 
-      {/* Область сообщений */}
-      {/* Хабарламалар аймағы */}
+      {/* Messages area */}
       <Box
         sx={{
           flexGrow: 1,
@@ -286,40 +402,67 @@ const ChatWindow = ({ ticketId, userEmail }) => {
             <MessageItem 
               key={message.id || index} 
               message={message} 
-              isStaff={message.sender_type === 'staff'} 
+              isOwnMessage={isUserMessage(message)}
+              userType={userType} 
             />
           ))
         )}
 
-        {/* Индикатор "печатает..." */}
-        {/* "Теруде..." индикаторы */}
+        {/* Typing indicator */}
         {isTyping && (
           <Box sx={{ p: 2, alignSelf: 'flex-start' }}>
             <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
-              Сотрудник печатает...
+              {userType === 'requester' ? 'Администратор печатает...' : 'Клиент печатает...'}
             </Typography>
           </Box>
         )}
         
-        {/* Ссылка для автоматической прокрутки */}
-        {/* Автоматты айналдыру үшін сілтеме */}
+        {/* Reference for auto-scroll */}
         <div ref={messagesEndRef} />
       </Box>
 
-      {/* Форма отправки сообщения */}
-      {/* Хабарлама жіберу формасы */}
+      {/* Message input form */}
       <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
         <form onSubmit={handleSendMessage}>
           <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            {/* Прикрепление файлов */}
-            {/* Файлдарды тіркеу */}
-            <AttachmentUpload 
-              files={files} 
-              setFiles={setFiles} 
-              disabled={sending} 
-            />
+            {/* File attachments */}
+            <Box sx={{ mb: 1 }}>
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleFileChange}
+                multiple
+              />
+              
+              {files.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="caption" gutterBottom>
+                    Вложения ({files.length}):
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {files.map((file, idx) => (
+                      <Chip 
+                        key={idx}
+                        label={`${file.name} (${(file.size / 1024).toFixed(0)} KB)`}
+                        onDelete={() => removeFile(idx)}
+                        size="small"
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </Box>
             
-            <Box sx={{ display: 'flex', mt: 1 }}>
+            <Box sx={{ display: 'flex' }}>
+              <IconButton 
+                color="primary" 
+                onClick={handleAttachmentClick}
+                disabled={sending}
+              >
+                <AttachFileIcon />
+              </IconButton>
+              
               <TextField
                 fullWidth
                 variant="outlined"
@@ -328,10 +471,11 @@ const ChatWindow = ({ ticketId, userEmail }) => {
                 onChange={handleMessageChange}
                 size="small"
                 disabled={sending}
-                sx={{ mr: 1 }}
+                sx={{ mx: 1 }}
                 multiline
                 maxRows={4}
               />
+              
               <Button
                 variant="contained"
                 color="primary"
@@ -343,14 +487,22 @@ const ChatWindow = ({ ticketId, userEmail }) => {
               </Button>
             </Box>
           </Box>
-          {userEmail && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          
+          {/* Connection status & email info */}
+          <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between' }}>
+            <Typography variant="caption" color="text.secondary">
               {wsConnected ? 
-                "Копия сообщения будет отправлена на ваш email" : 
-                "Соединение с сервером отсутствует. Сообщения могут быть доставлены с задержкой."
+                "Соединение установлено" : 
+                "Работа в автономном режиме. Сообщения будут отправлены при восстановлении соединения."
               }
             </Typography>
-          )}
+            
+            {userEmail && (
+              <Typography variant="caption" color="text.secondary">
+                Копия на: {userEmail}
+              </Typography>
+            )}
+          </Box>
         </form>
       </Box>
     </Paper>

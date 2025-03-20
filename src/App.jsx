@@ -7,6 +7,8 @@ import Footer from './components/common/Footer';
 import HomePage from './pages/HomePage';
 import TicketDetailPage from './pages/TicketDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ChatPage from './pages/ChatPage';
+import EmailRedirect from './pages/EmailRedirect';
 
 // Создаем кастомную тему
 const theme = createTheme({
@@ -92,6 +94,7 @@ function App() {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/tickets/:id" element={<TicketDetailPage />} />
+              <Route path="/chat/:id" element={<ChatPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>

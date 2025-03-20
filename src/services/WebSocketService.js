@@ -11,7 +11,12 @@ class WebSocketService {
       this.reconnectAttempts = 0;
       this.maxReconnectAttempts = 10;
       this.reconnectTimeout = null;
-      this.baseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:5000/ws';
+      
+      // Determine base URL from current location or environment variable
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const defaultHost = window.location.hostname + (location.port ? ':' + location.port : '');
+      this.baseUrl = import.meta.env.VITE_WS_URL || `${protocol}//${defaultHost}/ws`;
+      
       this.messageHandlers = new Map();
       this.statusHandlers = new Map();
       this.typingHandlers = new Map();
@@ -19,6 +24,8 @@ class WebSocketService {
       this.userId = null;
       this.userType = null;
       this.pingInterval = null;
+      
+      console.log('WebSocketService initialized with base URL:', this.baseUrl);
     }
   
     /**
@@ -35,8 +42,10 @@ class WebSocketService {
         return this;
       }
   
-      this.userId = userId;
+      this.userId = userId || 'anonymous';
       this.userType = userType;
+      
+      console.log(`Initializing WebSocket for user: ${this.userId}, type: ${this.userType}`);
   
       this.connect();
       return this;
@@ -48,7 +57,19 @@ class WebSocketService {
      */
     connect() {
       try {
+        // Clear any existing connection
+        if (this.socket) {
+          this.socket.onopen = null;
+          this.socket.onmessage = null;
+          this.socket.onerror = null;
+          this.socket.onclose = null;
+          this.socket.close();
+          this.socket = null;
+        }
+        
         const url = `${this.baseUrl}?userId=${this.userId}&userType=${this.userType}`;
+        console.log(`Connecting to WebSocket: ${url}`);
+        
         this.socket = new WebSocket(url);
   
         // Установка обработчиков событий
@@ -57,8 +78,6 @@ class WebSocketService {
         this.socket.onmessage = this.handleMessage.bind(this);
         this.socket.onerror = this.handleError.bind(this);
         this.socket.onclose = this.handleClose.bind(this);
-  
-        console.log(`Connecting to WebSocket: ${url}`);
       } catch (error) {
         console.error('WebSocket connection error:', error);
         this.scheduleReconnect();
@@ -69,8 +88,8 @@ class WebSocketService {
      * Обработчик открытия соединения
      * Байланысты ашу өңдеушісі
      */
-    handleOpen() {
-      console.log('WebSocket connected successfully');
+    handleOpen(event) {
+      console.log('WebSocket connected successfully', event);
       this.isConnected = true;
       this.reconnectAttempts = 0;
   
@@ -81,6 +100,14 @@ class WebSocketService {
       // Уведомляем всех подписчиков о подключении
       // Барлық жазылушыларға қосылым туралы хабарлаймыз
       this.notifyConnectionHandlers(true);
+      
+      // Send initial message to confirm connection
+      this.sendMessage({
+        type: 'connection_init',
+        userId: this.userId,
+        userType: this.userType,
+        timestamp: new Date().toISOString()
+      });
     }
   
     /**
@@ -157,7 +184,7 @@ class WebSocketService {
      * @param {CloseEvent} event - Событие закрытия
      */
     handleClose(event) {
-      console.log(`WebSocket connection closed: ${event.code} - ${event.reason}`);
+      console.log(`WebSocket connection closed: ${event.code} - ${event.reason || 'No reason provided'}`);
       this.isConnected = false;
       this.clearPingInterval();
   
@@ -238,12 +265,16 @@ class WebSocketService {
      */
     sendMessage(data) {
       if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-        console.log('Cannot send message, WebSocket is not connected');
+        console.log('Cannot send message, WebSocket is not connected', {
+          socketExists: !!this.socket,
+          readyState: this.socket ? this.socket.readyState : 'N/A'
+        });
         return false;
       }
   
       try {
-        this.socket.send(JSON.stringify(data));
+        const message = JSON.stringify(data);
+        this.socket.send(message);
         return true;
       } catch (error) {
         console.error('Error sending WebSocket message:', error);
@@ -261,15 +292,22 @@ class WebSocketService {
      * @returns {boolean} - Успешность отправки
      */
     sendChatMessage(ticketId, content, attachmentIds = []) {
-      return this.sendMessage({
-        type: 'chat_message',
-        ticket_id: ticketId,
-        content: content,
-        sender_id: this.userId,
-        sender_type: this.userType,
-        attachments: attachmentIds
-      });
-    }
+        console.log(`Sending chat message as ${this.userType} (ID: ${this.userId})`);
+        
+        // Ensure we have proper user type and ID to distinguish message sender
+        const senderType = this.userType || 'requester';
+        const senderId = this.userId || 'anonymous';
+        
+        return this.sendMessage({
+          type: 'chat_message',
+          ticket_id: ticketId,
+          content: content,
+          sender_id: senderId,
+          sender_type: senderType,
+          sender_name: senderType === 'requester' ? 'Клиент' : 'Администратор',
+          attachments: attachmentIds
+        });
+      }
   
     /**
      * Отправка статуса набора текста
@@ -319,6 +357,16 @@ class WebSocketService {
   
       if (this.socket) {
         try {
+          // Отправляем сообщение о закрытии соединения, если возможно
+          if (this.socket.readyState === WebSocket.OPEN) {
+            this.sendMessage({
+              type: 'disconnect',
+              userId: this.userId,
+              userType: this.userType,
+              timestamp: new Date().toISOString()
+            });
+          }
+          
           this.socket.close(1000, 'Client disconnected intentionally');
         } catch (error) {
           console.error('Error closing WebSocket:', error);
