@@ -29,10 +29,10 @@ import {
 import ApiStatusIndicator from './ApiStatusIndicator';
 
 const pages = [
-  { title: 'Главная', path: '/' },
-  { title: 'Услуги', path: '/#services' },
-  { title: 'О компании', path: '/#about' },
-  { title: 'Контакты', path: '/#contacts' }
+  { title: '', path: '/' },
+  { title: '', path: '/#services' },
+  { title: '', path: '/#about' },
+  { title: '', path: '/#contacts' }
 ];
 
 const Header = () => {

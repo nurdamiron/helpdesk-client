@@ -33,7 +33,6 @@ const FORM_STEPS = [
   { label: 'Контактная информация', key: 'contactInfo' },
   { label: 'Детали заявки', key: 'ticketDetails' },
   { label: 'Информация об объекте', key: 'propertyInfo' },
-  { label: 'Вложения', key: 'attachments' }
 ];
 
 /**
@@ -354,12 +353,12 @@ const TicketForm = ({ onSubmitSuccess }) => {
                 />
               )}
               
-              {currentStep === 3 && (
+              {/* {currentStep === 3 && (
                 <AttachmentsStep 
                   files={files}
                   onFilesChange={handleFilesChange}
                 />
-              )}
+              )} */}
             </CardContent>
           </Card>
           

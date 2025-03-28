@@ -1,11 +1,11 @@
 // src/components/common/Footer.jsx
 import { Box, Container, Grid, Typography, Link, Divider, IconButton } from '@mui/material';
 import {
-  Construction as ConstructionIcon,
-  Facebook as FacebookIcon,
-  Instagram as InstagramIcon,
-  Twitter as TwitterIcon,
-  LinkedIn as LinkedInIcon,
+  Analytics as AnalyticsIcon,
+  Dashboard as DashboardIcon,
+  People as PeopleIcon,
+  Settings as SettingsIcon,
+  Support as SupportIcon,
   LocationOn as LocationIcon,
   Phone as PhoneIcon,
   Email as EmailIcon
@@ -13,11 +13,8 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 
 const Footer = () => {
-  // Текущий год для копирайта
   const currentYear = new Date().getFullYear();
-  
-  // Название компании из переменных окружения или по умолчанию
-  const companyName = import.meta.env.VITE_COMPANY_NAME || 'СтройМастер';
+  const companyName = import.meta.env.VITE_COMPANY_NAME || 'Корпоративная система';
   
   return (
     <Box
@@ -34,32 +31,18 @@ const Footer = () => {
           {/* Колонка с информацией о компании */}
           <Grid item xs={12} md={4}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <ConstructionIcon sx={{ mr: 1 }} />
+              <AnalyticsIcon sx={{ mr: 1 }} />
               <Typography variant="h6" component="div">
                 {companyName}
               </Typography>
             </Box>
             <Typography variant="body2" sx={{ mb: 2 }}>
-              Строительная компания с многолетним опытом. Качественное выполнение работ любой сложности в срок.
+              Корпоративная система управления процессами и коммуникациями
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <IconButton color="inherit" size="small">
-                <FacebookIcon />
-              </IconButton>
-              <IconButton color="inherit" size="small">
-                <InstagramIcon />
-              </IconButton>
-              <IconButton color="inherit" size="small">
-                <TwitterIcon />
-              </IconButton>
-              <IconButton color="inherit" size="small">
-                <LinkedInIcon />
-              </IconButton>
-            </Box>
           </Grid>
 
           {/* Колонка с навигацией */}
-          <Grid item xs={12} sm={6} md={4}>
+          {/* <Grid item xs={12} sm={6} md={4}>
             <Typography variant="h6" component="h3" gutterBottom>
               Навигация
             </Typography>
@@ -69,58 +52,53 @@ const Footer = () => {
                 to="/"
                 color="inherit"
                 underline="hover"
-                sx={{ display: 'block', mb: 1 }}
+                sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
               >
-                Главная
+                <DashboardIcon sx={{ mr: 1, fontSize: 18 }} />
+                Рабочий стол
               </Link>
               <Link
                 component={RouterLink}
-                to="/#services"
+                to="/tasks"
                 color="inherit"
                 underline="hover"
-                sx={{ display: 'block', mb: 1 }}
+                sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
               >
-                Услуги
+                <SupportIcon sx={{ mr: 1, fontSize: 18 }} />
+                Заявки
               </Link>
               <Link
                 component={RouterLink}
-                to="/#about"
+                to="/team"
                 color="inherit"
                 underline="hover"
-                sx={{ display: 'block', mb: 1 }}
+                sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
               >
-                О компании
+                <PeopleIcon sx={{ mr: 1, fontSize: 18 }} />
+                Сотрудники
               </Link>
               <Link
                 component={RouterLink}
-                to="/#contacts"
+                to="/settings"
                 color="inherit"
                 underline="hover"
-                sx={{ display: 'block', mb: 1 }}
+                sx={{ display: 'flex', alignItems: 'center', mb: 1 }}
               >
-                Контакты
-              </Link>
-              <Link
-                component={RouterLink}
-                to="/#faq"
-                color="inherit"
-                underline="hover"
-                sx={{ display: 'block', mb: 1 }}
-              >
-                Часто задаваемые вопросы
+                <SettingsIcon sx={{ mr: 1, fontSize: 18 }} />
+                Настройки
               </Link>
             </Box>
-          </Grid>
+          </Grid> */}
 
           {/* Колонка с контактами */}
           <Grid item xs={12} sm={6} md={4}>
             <Typography variant="h6" component="h3" gutterBottom>
-              Контакты
+              Служба поддержки
             </Typography>
             <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
               <LocationIcon fontSize="small" sx={{ mr: 1 }} />
               <Typography variant="body2">
-                г. Алматы, ул. Ауезова, д. 69, офис 420
+                г. Алматы
               </Typography>
             </Box>
             <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
@@ -130,22 +108,19 @@ const Footer = () => {
                 color="inherit"
                 underline="hover"
               >
-                +7 (700) 700 0007
+                +7 700 000 00 01
               </Link>
             </Box>
             <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
               <EmailIcon fontSize="small" sx={{ mr: 1 }} />
               <Link
-                href="mailto:info@строймастер.рф"
+                href="mailto:support@company.ru"
                 color="inherit"
                 underline="hover"
               >
-                info@helpdesk.kz
+                support@helpdesk.kz
               </Link>
             </Box>
-            <Typography variant="body2" sx={{ mt: 2 }}>
-              Режим работы: Пн-Пт с 9:00 до 18:00
-            </Typography>
           </Grid>
         </Grid>
 
@@ -154,7 +129,7 @@ const Footer = () => {
         {/* Нижняя часть футера */}
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'center', sm: 'flex-start' } }}>
           <Typography variant="body2" sx={{ mb: { xs: 2, sm: 0 } }}>
-            © {currentYear} {companyName}. Все права защищены.
+            © {currentYear} {companyName}. Внутренняя система
           </Typography>
           <Box>
             <Link
@@ -169,7 +144,7 @@ const Footer = () => {
               underline="hover"
               sx={{ mx: 1 }}
             >
-              Пользовательское соглашение
+              Служебные инструкции
             </Link>
           </Box>
         </Box>

@@ -6,25 +6,20 @@ import {
   Box, 
   Grid, 
   Paper, 
-  Tabs, 
-  Tab,
-  Button,
   Card,
   CardContent,
-  CardMedia,
-  Divider
+  Divider,
+  Button
 } from '@mui/material';
 import {
-  SupportAgent as SupportIcon,
-  Engineering as EngineeringIcon,
   Construction as ConstructionIcon,
+  Engineering as EngineeringIcon,
   AssignmentTurnedIn as AssignmentIcon,
-  Search as SearchIcon
+  SupportAgent as SupportIcon
 } from '@mui/icons-material';
 import TicketForm from '../components/ticket/TicketForm';
-import TicketStatusChecker from '../components/ticket/TicketStatusChecker';
 
-// Компонент для отображения карточки с услугой
+// Компонент для отображения услуги
 const ServiceCard = ({ title, description, icon }) => {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -49,13 +44,8 @@ const ServiceCard = ({ title, description, icon }) => {
   );
 };
 
-// Главная страница
 const HomePage = () => {
-  const [activeTab, setActiveTab] = useState(0);
-
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
+  const [showTicketForm, setShowTicketForm] = useState(false);
 
   return (
     <Box>
@@ -65,46 +55,29 @@ const HomePage = () => {
           bgcolor: 'primary.main',
           color: 'primary.contrastText',
           py: 8,
-          mb: 6
+          mb: 6,
+          textAlign: 'center'
         }}
       >
         <Container>
-          <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={7}>
-              <Typography variant="h3" component="h1" gutterBottom>
-                Строительная помощь
-              </Typography>
-              <Typography variant="h5" gutterBottom>
-                Портал клиентской поддержки
-              </Typography>
-              <Typography variant="body1" paragraph sx={{ mb: 4 }}>
-                Получите квалифицированную помощь по любым вопросам строительства, 
-                ремонта и отделки. Наши специалисты ответят в кратчайшие сроки и 
-                помогут решить вашу задачу!
-              </Typography>
-              <Button 
-                variant="contained" 
-                color="secondary" 
-                size="large"
-                onClick={() => setActiveTab(0)}
-                sx={{ mr: 2 }}
-              >
-                Подать заявку
-              </Button>
-              <Button 
-                variant="outlined" 
-                color="inherit" 
-                size="large"
-                onClick={() => setActiveTab(1)}
-                startIcon={<SearchIcon />}
-              >
-                Проверить статус
-              </Button>
-            </Grid>
-            <Grid item xs={12} md={5}>
-              {/* Здесь можно добавить изображение или иллюстрацию */}
-            </Grid>
-          </Grid>
+          <Typography variant="h3" component="h1" gutterBottom>
+            Строительная компания
+          </Typography>
+          <Typography variant="h5" gutterBottom>
+            Профессиональные строительные услуги
+          </Typography>
+          <Typography variant="body1" paragraph sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
+            Мы предоставляем комплексные строительные услуги высокого качества. 
+            Наша команда профессионалов готова воплотить в жизнь любые ваши идеи.
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="secondary" 
+            size="large"
+            onClick={() => setShowTicketForm(true)}
+          >
+            Оставить заявку
+          </Button>
         </Container>
       </Box>
 
@@ -113,36 +86,33 @@ const HomePage = () => {
         <Typography variant="h4" component="h2" gutterBottom align="center">
           Наши услуги
         </Typography>
-        <Typography variant="body1" paragraph align="center" sx={{ mb: 4 }}>
-          Комплексный подход к решению строительных задач любой сложности
-        </Typography>
         
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={3}>
             <ServiceCard
-              title="Ремонт и отделка"
-              description="Капитальный и косметический ремонт квартир, офисов и коммерческих помещений с гарантией качества."
+              title="Ремонт"
+              description="Комплексный ремонт квартир, офисов и помещений под ключ."
               icon={<ConstructionIcon sx={{ fontSize: 40 }} />}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <ServiceCard
               title="Проектирование"
-              description="Разработка архитектурных проектов, планировочных решений и дизайн-проектов любой сложности."
+              description="Разработка архитектурных и дизайн-проектов любой сложности."
               icon={<EngineeringIcon sx={{ fontSize: 40 }} />}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <ServiceCard
               title="Строительство"
-              description="Полный цикл строительных работ от фундамента до кровли с соблюдением всех технологий."
+              description="Полный цикл строительных работ от фундамента до кровли."
               icon={<AssignmentIcon sx={{ fontSize: 40 }} />}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <ServiceCard
               title="Консультации"
-              description="Профессиональные консультации по всем вопросам строительства, ремонта и отделки."
+              description="Профессиональные консультации по всем вопросам строительства."
               icon={<SupportIcon sx={{ fontSize: 40 }} />}
             />
           </Grid>
@@ -151,59 +121,67 @@ const HomePage = () => {
 
       <Divider sx={{ mb: 6 }} />
 
-      {/* Форма заявки и проверка статуса */}
-      <Container sx={{ mb: 8 }}>
-        <Paper elevation={0} sx={{ p: { xs: 2, md: 3 } }}>
-          <Tabs 
-            value={activeTab} 
-            onChange={handleTabChange}
-            centered
-            sx={{ mb: 3 }}
+      {/* Форма заявки */}
+      {showTicketForm ? (
+        <Container sx={{ mb: 8 }}>
+          <TicketForm 
+            onSubmitSuccess={() => setShowTicketForm(false)} 
+          />
+        </Container>
+      ) : (
+        <Container sx={{ mb: 8, textAlign: 'center' }}>
+          <Typography variant="h5" gutterBottom>
+            Хотите начать проект?
+          </Typography>
+          <Typography variant="body1" paragraph sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
+            Оставьте заявку, и наши специалисты свяжутся с вами для детального обсуждения вашего проекта.
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            size="large"
+            onClick={() => setShowTicketForm(true)}
           >
-            <Tab label="Подать заявку" />
-            <Tab label="Проверить статус" />
-          </Tabs>
-          
-          {activeTab === 0 && <TicketForm />}
-          {activeTab === 1 && <TicketStatusChecker />}
-        </Paper>
-      </Container>
+            Оставить заявку
+          </Button>
+        </Container>
+      )}
 
-      {/* Преимущества работы с нами */}
+      {/* Преимущества */}
       <Box sx={{ bgcolor: 'grey.100', py: 6, mb: 6 }}>
         <Container>
           <Typography variant="h4" component="h2" gutterBottom align="center">
-            Почему клиенты выбирают нас
+            Почему выбирают нас
           </Typography>
           
           <Grid container spacing={4} sx={{ mt: 2 }}>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" gutterBottom>
-                  Опытная команда
+                  Опыт и профессионализм
                 </Typography>
                 <Typography variant="body2">
-                  Наши специалисты имеют многолетний опыт в строительстве и решении сложных задач
+                  Наши специалисты имеют многолетний опыт работы в строительстве
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" gutterBottom>
-                  Гарантия качества
+                  Качество гарантировано
                 </Typography>
                 <Typography variant="body2">
-                  Мы контролируем все этапы работ и даем гарантию на результат
+                  Мы несем ответственность за качество выполненных работ
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" gutterBottom>
-                  Техническая поддержка 24/7
+                  Индивидуальный подход
                 </Typography>
                 <Typography variant="body2">
-                  Круглосуточная поддержка и оперативное реагирование на запросы
+                  Каждый проект уникален и требует особого внимания
                 </Typography>
               </Box>
             </Grid>
