@@ -7,58 +7,52 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Box
 } from '@mui/material';
-import { Home as HomeIcon } from '@mui/icons-material';
+import { LocationOn as LocationIcon } from '@mui/icons-material';
 
-// Типы объектов недвижимости
+// Типы помещений
 const PROPERTY_TYPES = [
-  { value: 'apartment', label: 'Квартира' },
-  { value: 'house', label: 'Частный дом' },
-  { value: 'office', label: 'Офис' },
-  { value: 'commercial', label: 'Коммерческое помещение' },
-  { value: 'land', label: 'Земельный участок' },
+  { value: 'office', label: 'Офисное помещение' },
+  { value: 'meeting_room', label: 'Переговорная' },
+  { value: 'restroom', label: 'Санузел' },
+  { value: 'kitchen', label: 'Кухня/столовая' },
+  { value: 'hallway', label: 'Коридор/холл' },
+  { value: 'server_room', label: 'Серверная' },
+  { value: 'warehouse', label: 'Склад' },
   { value: 'other', label: 'Другое' },
 ];
 
 /**
- * Компонент шага формы с информацией об объекте
- * Нысан туралы ақпараты бар форма қадамының компоненті
+ * Компонент шага формы с информацией о местоположении проблемы
  * 
  * @param {Object} formData - Данные формы
  * @param {Function} onChange - Обработчик изменения полей
  * @param {Object} errors - Объект с ошибками валидации
  */
 const PropertyInfoStep = ({ formData, onChange, errors }) => {
-  // Определяем, является ли адрес обязательным полем
-  // Адрес обязателен для всех категорий, кроме консультации
-  const isAddressRequired = formData.category !== 'consultation';
-
   return (
     <>
       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <HomeIcon sx={{ mr: 1 }} />
-        Информация об объекте
-        {!isAddressRequired && (
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-            (Опционально для консультаций)
-          </Typography>
-        )}
+        <LocationIcon sx={{ mr: 1 }} />
+        Расположение
+        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+          (Необязательно)
+        </Typography>
       </Typography>
       
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <FormControl fullWidth>
-            <InputLabel id="property-type-label">Тип объекта</InputLabel>
+            <InputLabel id="property-type-label">Тип помещения</InputLabel>
             <Select
               labelId="property-type-label"
               id="property_type"
               name="property_type"
               value={formData.property_type}
               onChange={onChange}
-              label="Тип объекта"
-              // Комментарий на казахском
-              // Нысан түрі (пәтер, үй, кеңсе және т.б.)
+              label="Тип помещения"
             >
               {PROPERTY_TYPES.map(option => (
                 <MenuItem key={option.value} value={option.value}>
@@ -74,40 +68,36 @@ const PropertyInfoStep = ({ formData, onChange, errors }) => {
             fullWidth
             id="property_area"
             name="property_area"
-            label="Площадь (м²)"
-            type="number"
+            label="Номер кабинета/комнаты"
             value={formData.property_area}
             onChange={onChange}
-            InputProps={{ inputProps: { min: 0 } }}
-            // Комментарий на казахском
-            // Нысанның ауданы, шаршы метрмен
+            placeholder="Например: 205"
           />
         </Grid>
         
         <Grid item xs={12}>
           <TextField
-            required={isAddressRequired}
             fullWidth
             id="property_address"
             name="property_address"
-            label="Адрес объекта"
+            label="Адрес или дополнительная информация о расположении"
             value={formData.property_address}
             onChange={onChange}
             error={!!errors.property_address}
-            helperText={errors.property_address || "Укажите полный адрес объекта"}
-            placeholder="Город, улица, дом, квартира"
-            // Комментарий на казахском
-            // Нысанның толық мекенжайы (қала, көше, үй, пәтер)
+            helperText={errors.property_address}
+            placeholder="Например: 2 этаж, северное крыло, рядом с кабинетом директора"
           />
         </Grid>
+        
+        <Grid item xs={12}>
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', color: 'info.contrastText', borderRadius: 1 }}>
+            <Typography variant="body2">
+              Точное указание расположения поможет ускорить процесс обработки заявки. 
+              Если проблема наблюдается в нескольких местах, укажите это в описании заявки.
+            </Typography>
+          </Box>
+        </Grid>
       </Grid>
-      
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-        Точная информация об объекте поможет нам корректно оценить объем работ и подготовить предложение.
-        {/* Комментарий на казахском */}
-        {/* Нысан туралы нақты ақпарат бізге жұмыс көлемін дұрыс бағалауға 
-        және ұсыныс дайындауға көмектеседі. */}
-      </Typography>
     </>
   );
 };

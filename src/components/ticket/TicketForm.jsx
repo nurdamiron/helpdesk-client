@@ -22,22 +22,19 @@ import { ticketsApi } from '../../api/tickets';
 import ContactInfoStep from './form-steps/ContactInfoStep';
 import TicketDetailsStep from './form-steps/TicketDetailsStep';
 import PropertyInfoStep from './form-steps/PropertyInfoStep';
-import AttachmentsStep from './form-steps/AttachmentsStep';
 import SuccessMessage from './form-steps/SuccessMessage';
 
 /**
  * Шаги заполнения формы заявки
- * Өтінім формасын толтыру қадамдары
  */
 const FORM_STEPS = [
-  { label: 'Контактная информация', key: 'contactInfo' },
-  { label: 'Детали заявки', key: 'ticketDetails' },
-  { label: 'Информация об объекте', key: 'propertyInfo' },
+  { label: 'Информация о сотруднике', key: 'contactInfo' },
+  { label: 'Детали обращения', key: 'ticketDetails' },
+  { label: 'Дополнительная информация', key: 'propertyInfo' },
 ];
 
 /**
  * Начальное состояние формы
- * Форманың бастапқы күйі
  */
 const INITIAL_FORM_STATE = {
   // Контактная информация
@@ -53,14 +50,13 @@ const INITIAL_FORM_STATE = {
   priority: 'medium',
   
   // Информация об объекте
-  property_type: 'apartment',
+  property_type: 'office',
   property_address: '',
   property_area: ''
 };
 
 /**
- * Компонент формы создания заявки
- * Өтінім жасау формасының компоненті
+ * Компонент формы создания внутренней заявки
  * 
  * @param {Function} onSubmitSuccess - Функция, вызываемая после успешного создания заявки
  */
@@ -70,7 +66,6 @@ const TicketForm = ({ onSubmitSuccess }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [files, setFiles] = useState([]);
   const [ticketCreated, setTicketCreated] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
@@ -80,7 +75,6 @@ const TicketForm = ({ onSubmitSuccess }) => {
 
   /**
    * Обработчик изменения полей формы
-   * Форма өрістерінің өзгеруін өңдеуші
    */
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -96,16 +90,7 @@ const TicketForm = ({ onSubmitSuccess }) => {
   };
 
   /**
-   * Обработчик изменения загруженных файлов
-   * Жүктелген файлдардың өзгеруін өңдеуші
-   */
-  const handleFilesChange = (newFiles) => {
-    setFiles(newFiles);
-  };
-
-  /**
    * Проверка текущего шага формы
-   * Форманың ағымдағы қадамын тексеру
    */
   const validateStep = (step) => {
     const newErrors = {};
@@ -117,7 +102,7 @@ const TicketForm = ({ onSubmitSuccess }) => {
         }
         
         if (!formData.email.trim()) {
-          newErrors.email = 'Укажите email для связи';
+          newErrors.email = 'Укажите корпоративный email';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
           newErrors.email = 'Укажите корректный email';
         }
@@ -140,14 +125,8 @@ const TicketForm = ({ onSubmitSuccess }) => {
         }
         break;
         
-      case 2: // Проверка информации об объекте
-        // Адрес обязателен только если категория не "консультация"
-        if (formData.category !== 'consultation' && !formData.property_address.trim()) {
-          newErrors.property_address = 'Укажите адрес объекта';
-        }
-        break;
-        
-      case 3: // Проверка вложений - нет обязательных полей
+      case 2: // Проверка дополнительной информации - все поля опциональны
+        // Здесь можно оставить без обязательных проверок
         break;
         
       default:
@@ -160,7 +139,6 @@ const TicketForm = ({ onSubmitSuccess }) => {
 
   /**
    * Переход к следующему шагу
-   * Келесі қадамға өту
    */
   const handleNext = () => {
     if (validateStep(currentStep)) {
@@ -176,7 +154,6 @@ const TicketForm = ({ onSubmitSuccess }) => {
 
   /**
    * Переход к предыдущему шагу
-   * Алдыңғы қадамға өту
    */
   const handleBack = () => {
     setCurrentStep(prev => Math.max(0, prev - 1));
@@ -184,7 +161,6 @@ const TicketForm = ({ onSubmitSuccess }) => {
 
   /**
    * Отправка формы и создание заявки
-   * Форманы жіберу және өтінім жасау
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -212,7 +188,7 @@ const TicketForm = ({ onSubmitSuccess }) => {
         priority: formData.priority,
         category: formData.category,
         
-        // Информация о клиенте в metadata
+        // Информация о сотруднике в metadata
         metadata: {
           requester: {
             email: formData.email,
@@ -233,17 +209,6 @@ const TicketForm = ({ onSubmitSuccess }) => {
       // Отправка данных на сервер
       const response = await ticketsApi.createTicket(ticketData);
       
-      // Загрузка файлов, если они есть
-      if (files.length > 0) {
-        for (const file of files) {
-          try {
-            await ticketsApi.uploadAttachment(response.ticket.id, file);
-          } catch (fileErr) {
-            console.error('Ошибка загрузки файла:', fileErr);
-          }
-        }
-      }
-      
       // Сохранение информации о созданной заявке
       setTicketCreated(response.ticket);
       
@@ -256,7 +221,6 @@ const TicketForm = ({ onSubmitSuccess }) => {
       
       // Сброс формы
       setFormData(INITIAL_FORM_STATE);
-      setFiles([]);
       
       // Вызов обработчика успешного создания заявки
       if (onSubmitSuccess) {
@@ -278,7 +242,6 @@ const TicketForm = ({ onSubmitSuccess }) => {
 
   /**
    * Закрытие уведомления
-   * Хабарламаны жабу
    */
   const handleCloseSnackbar = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
@@ -286,7 +249,6 @@ const TicketForm = ({ onSubmitSuccess }) => {
 
   /**
    * Создание новой заявки после успешного создания
-   * Сәтті жасалғаннан кейін жаңа өтінім жасау
    */
   const handleCreateNewTicket = () => {
     setTicketCreated(null);
@@ -308,11 +270,11 @@ const TicketForm = ({ onSubmitSuccess }) => {
     <Container maxWidth="md">
       <Paper elevation={3} sx={{ p: 3, my: 4 }}>
         <Typography variant="h5" component="h2" gutterBottom>
-          Подать заявку
+          Внутренняя заявка
         </Typography>
         
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Заполните форму ниже, и наши специалисты свяжутся с вами в ближайшее время.
+          Заполните форму для создания внутренней заявки. Ваше обращение будет рассмотрено в кратчайшие сроки.
           Обязательные поля отмечены звездочкой (*).
         </Typography>
         
@@ -352,13 +314,6 @@ const TicketForm = ({ onSubmitSuccess }) => {
                   errors={errors}
                 />
               )}
-              
-              {/* {currentStep === 3 && (
-                <AttachmentsStep 
-                  files={files}
-                  onFilesChange={handleFilesChange}
-                />
-              )} */}
             </CardContent>
           </Card>
           

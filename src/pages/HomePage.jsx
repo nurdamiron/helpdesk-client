@@ -61,14 +61,14 @@ const HomePage = () => {
       >
         <Container>
           <Typography variant="h3" component="h1" gutterBottom>
-            Строительная компания
+            Корпоративный портал
           </Typography>
           <Typography variant="h5" gutterBottom>
-            Профессиональные строительные услуги
+            Система внутренних заявок сотрудников
           </Typography>
           <Typography variant="body1" paragraph sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
-            Мы предоставляем комплексные строительные услуги высокого качества. 
-            Наша команда профессионалов готова воплотить в жизнь любые ваши идеи.
+            Здесь вы можете оставить заявку на решение внутренних вопросов и проблем.
+            Наша команда специалистов оперативно обработает ваше обращение.
           </Typography>
           <Button 
             variant="contained" 
@@ -76,7 +76,7 @@ const HomePage = () => {
             size="large"
             onClick={() => setShowTicketForm(true)}
           >
-            Оставить заявку
+            Создать заявку
           </Button>
         </Container>
       </Box>
@@ -84,35 +84,35 @@ const HomePage = () => {
       {/* Наши услуги */}
       <Container sx={{ mb: 6 }}>
         <Typography variant="h4" component="h2" gutterBottom align="center">
-          Наши услуги
+          Доступные сервисы
         </Typography>
         
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={3}>
             <ServiceCard
-              title="Ремонт"
-              description="Комплексный ремонт квартир, офисов и помещений под ключ."
+              title="Техподдержка"
+              description="Обслуживание компьютеров, настройка сети, программное обеспечение."
               icon={<ConstructionIcon sx={{ fontSize: 40 }} />}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <ServiceCard
-              title="Проектирование"
-              description="Разработка архитектурных и дизайн-проектов любой сложности."
+              title="Хозяйственный отдел"
+              description="Ремонт помещений, мебель, кондиционеры, освещение."
               icon={<EngineeringIcon sx={{ fontSize: 40 }} />}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <ServiceCard
-              title="Строительство"
-              description="Полный цикл строительных работ от фундамента до кровли."
+              title="Администрация"
+              description="Запросы на доступы и пропуска, вопросы к руководству."
               icon={<AssignmentIcon sx={{ fontSize: 40 }} />}
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <ServiceCard
-              title="Консультации"
-              description="Профессиональные консультации по всем вопросам строительства."
+              title="Отдел кадров"
+              description="Кадровые документы, справки, отпуска, командировки."
               icon={<SupportIcon sx={{ fontSize: 40 }} />}
             />
           </Grid>
@@ -131,10 +131,10 @@ const HomePage = () => {
       ) : (
         <Container sx={{ mb: 8, textAlign: 'center' }}>
           <Typography variant="h5" gutterBottom>
-            Хотите начать проект?
+            Нужна помощь?
           </Typography>
           <Typography variant="body1" paragraph sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
-            Оставьте заявку, и наши специалисты свяжутся с вами для детального обсуждения вашего проекта.
+            Заполните заявку, и наши специалисты оперативно возьмут в работу вашу проблему или запрос.
           </Typography>
           <Button 
             variant="contained" 
@@ -142,7 +142,7 @@ const HomePage = () => {
             size="large"
             onClick={() => setShowTicketForm(true)}
           >
-            Оставить заявку
+            Создать заявку
           </Button>
         </Container>
       )}
@@ -151,37 +151,37 @@ const HomePage = () => {
       <Box sx={{ bgcolor: 'grey.100', py: 6, mb: 6 }}>
         <Container>
           <Typography variant="h4" component="h2" gutterBottom align="center">
-            Почему выбирают нас
+            Преимущества системы
           </Typography>
           
           <Grid container spacing={4} sx={{ mt: 2 }}>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" gutterBottom>
-                  Опыт и профессионализм
+                  Оперативная обработка
                 </Typography>
                 <Typography variant="body2">
-                  Наши специалисты имеют многолетний опыт работы в строительстве
+                  Все заявки обрабатываются в кратчайшие сроки, с соблюдением внутренних SLA
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" gutterBottom>
-                  Качество гарантировано
+                  Прозрачность процессов
                 </Typography>
                 <Typography variant="body2">
-                  Мы несем ответственность за качество выполненных работ
+                  Отслеживайте статус вашей заявки и своевременно получайте уведомления
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" gutterBottom>
-                  Индивидуальный подход
+                  Единая система
                 </Typography>
                 <Typography variant="body2">
-                  Каждый проект уникален и требует особого внимания
+                  Все обращения фиксируются и обрабатываются в одной системе
                 </Typography>
               </Box>
             </Grid>

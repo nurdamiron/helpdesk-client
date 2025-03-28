@@ -28,10 +28,13 @@ import {
 } from '@mui/icons-material';
 import ApiStatusIndicator from './ApiStatusIndicator';
 
+// Обновленные пункты меню для корпоративного сайта
 const pages = [
   { title: '', path: '/' },
+  { title: '', path: '/#projects' },
   { title: '', path: '/#services' },
   { title: '', path: '/#about' },
+  { title: '', path: '/#careers' },
   { title: '', path: '/#contacts' }
 ];
 
@@ -75,7 +78,7 @@ const Header = () => {
               textDecoration: 'none',
             }}
           >
-            {import.meta.env.VITE_APP_NAME || 'СтройПомощь'}
+            СтройПомощь | Корпоративный сайт
           </Typography>
 
           {/* Menu - mobile */}
@@ -140,7 +143,7 @@ const Header = () => {
               textDecoration: 'none',
             }}
           >
-            {import.meta.env.VITE_APP_NAME || 'СтройПомощь'}
+            СтройПомощь
           </Typography>
 
           {/* Menu - desktop */}
@@ -163,14 +166,16 @@ const Header = () => {
               variant="contained"
               color="primary"
               component={RouterLink}
-              to="/#contact-form"
+              to="/portal"
               sx={{ display: { xs: 'none', sm: 'block' }, mr: 2 }}
             >
-              Подать заявку
+              Войти в систему
             </Button>
             
             {/* API Status Indicator */}
-            <ApiStatusIndicator />
+            <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
+              <ApiStatusIndicator />
+            </Box>
           </Box>
         </Toolbar>
       </Container>

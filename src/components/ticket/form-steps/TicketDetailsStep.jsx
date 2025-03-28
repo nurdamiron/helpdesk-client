@@ -7,21 +7,21 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Box
 } from '@mui/material';
-import { FormatListBulleted as ListIcon } from '@mui/icons-material';
+import { Assignment as AssignmentIcon } from '@mui/icons-material';
 
-// Категории для заявок строительной компании
+// Категории для внутренних заявок
 const CATEGORIES = [
-  { value: 'repair', label: 'Ремонтные работы' },
+  { value: 'repair', label: 'Ремонт и обслуживание' },
   { value: 'plumbing', label: 'Сантехника' },
   { value: 'electrical', label: 'Электрика' },
-  { value: 'construction', label: 'Строительство' },
-  { value: 'design', label: 'Проектирование' },
-  { value: 'consultation', label: 'Консультация' },
-  { value: 'estimate', label: 'Смета и расчеты' },
-  { value: 'materials', label: 'Материалы' },
-  { value: 'warranty', label: 'Гарантийный случай' },
+  { value: 'furniture', label: 'Мебель и оборудование' },
+  { value: 'it', label: 'ИТ и связь' },
+  { value: 'security', label: 'Безопасность' },
+  { value: 'supplies', label: 'Канцтовары и расходники' },
+  { value: 'cleaning', label: 'Клининг' },
   { value: 'other', label: 'Другое' }
 ];
 
@@ -35,7 +35,6 @@ const PRIORITIES = [
 
 /**
  * Компонент шага формы с деталями заявки
- * Өтінім егжей-тегжейлері бар форма қадамының компоненті
  * 
  * @param {Object} formData - Данные формы
  * @param {Function} onChange - Обработчик изменения полей
@@ -45,8 +44,8 @@ const TicketDetailsStep = ({ formData, onChange, errors }) => {
   return (
     <>
       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <ListIcon sx={{ mr: 1 }} />
-        Детали заявки
+        <AssignmentIcon sx={{ mr: 1 }} />
+        Детали обращения
       </Typography>
       
       <Grid container spacing={2}>
@@ -56,14 +55,12 @@ const TicketDetailsStep = ({ formData, onChange, errors }) => {
             fullWidth
             id="subject"
             name="subject"
-            label="Тема заявки"
+            label="Тема заявки *"
             value={formData.subject}
             onChange={onChange}
             error={!!errors.subject}
             helperText={errors.subject}
-            placeholder="Например: Ремонт ванной комнаты"
-            // Комментарий на казахском
-            // Өтінімнің тақырыбы, қысқаша сипаттамасы
+            placeholder="Например: Неисправность кондиционера в кабинете №205"
           />
         </Grid>
         
@@ -77,8 +74,6 @@ const TicketDetailsStep = ({ formData, onChange, errors }) => {
               value={formData.category}
               onChange={onChange}
               label="Категория"
-              // Комментарий на казахском
-              // Өтінім категориясы
             >
               {CATEGORIES.map(option => (
                 <MenuItem key={option.value} value={option.value}>
@@ -99,8 +94,6 @@ const TicketDetailsStep = ({ formData, onChange, errors }) => {
               value={formData.priority}
               onChange={onChange}
               label="Приоритет"
-              // Комментарий на казахском
-              // Өтінім басымдылығы
             >
               {PRIORITIES.map(option => (
                 <MenuItem key={option.value} value={option.value}>
@@ -117,26 +110,25 @@ const TicketDetailsStep = ({ formData, onChange, errors }) => {
             fullWidth
             id="description"
             name="description"
-            label="Описание проблемы или запроса"
+            label="Описание проблемы *"
             value={formData.description}
             onChange={onChange}
             error={!!errors.description}
-            helperText={errors.description || "Подробно опишите, что нужно сделать"}
+            helperText={errors.description || "Подробно опишите суть проблемы, что и где неисправно"}
             multiline
-            rows={5}
-            placeholder="Опишите детали вашей заявки: что необходимо сделать, проблемы, пожелания, сроки и т.д."
-            // Комментарий на казахском
-            // Мәселенің толық сипаттамасы, не істеу керек, мәселелер, тілектер, мерзімдер
+            rows={4}
+            placeholder="Опишите проблему максимально подробно: что произошло, где, когда, насколько срочно требуется решение"
           />
         </Grid>
+        
+        <Grid item xs={12}>
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', color: 'info.contrastText', borderRadius: 1 }}>
+            <Typography variant="body2">
+              Срочные заявки (приоритет "Срочный") обрабатываются в первую очередь. Пожалуйста, используйте этот приоритет только для действительно срочных случаев.
+            </Typography>
+          </Box>
+        </Grid>
       </Grid>
-      
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-        Чем подробнее вы опишете вашу проблему или запрос, тем быстрее и точнее мы сможем вам помочь.
-        {/* Комментарий на казахском */}
-        {/* Сіз мәселеңізді немесе сұрауыңызды неғұрлым толық сипаттасаңыз, 
-        біз сізге соғұрлым тезірек және дәлірек көмектесе аламыз. */}
-      </Typography>
     </>
   );
 };
