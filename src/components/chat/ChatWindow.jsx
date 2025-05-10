@@ -48,7 +48,7 @@ import { messagesApi } from '../../api/message';
  * @param {string} props.userEmail - Пайдаланушы email
  * @returns {JSX.Element} Чат терезесі компоненті
  */
-const ChatWindow = ({ ticketId, userEmail }) => {
+const ChatWindow = ({ ticketId, userEmail, ticket }) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -511,6 +511,36 @@ const ChatWindow = ({ ticketId, userEmail }) => {
     );
   }
 
+  // Если заявка закрыта, показываем специальное сообщение
+  const isTicketClosed = ticket => {
+    return ticket && ticket.status === 'closed';
+  };
+
+  // Компонент для отображения закрытой заявки
+  const renderClosedTicketMessage = () => {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          p: 3,
+          textAlign: 'center'
+        }}
+      >
+        <CheckCircleIcon color="success" sx={{ fontSize: 48, mb: 2 }} />
+        <Typography variant="h6" color="success.main" sx={{ mb: 1 }}>
+          Өтініш жабылды
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+          Бұл өтініш бойынша талқылау жабылды. Жаңа сұрақтар туындаса, жаңа өтініш жасаңыз.
+        </Typography>
+      </Box>
+    );
+  };
+
   // Теру индикаторын көрсету
   const renderTypingIndicator = () => {
     if (!isTyping) return null;
@@ -561,6 +591,11 @@ const ChatWindow = ({ ticketId, userEmail }) => {
       </Box>
     );
   };
+
+  // Если заявка закрыта, показываем соответствующее сообщение
+  if (ticket && ticket.status === 'closed') {
+    return renderClosedTicketMessage();
+  }
 
   return (
     <Box

@@ -1223,6 +1223,7 @@ const TicketDetailPage = () => {
                 <ChatWindow 
                   ticketId={id} 
                   userEmail={ticket.requester_email || ticket.metadata?.employee?.email || ''} 
+                  ticket={ticket}
                 />
               </Box>
             </Paper>
