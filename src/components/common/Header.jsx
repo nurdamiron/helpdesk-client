@@ -161,22 +161,7 @@ const Header = () => {
           </Box>
 
           {/* Right section */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Button
-              variant="contained"
-              color="primary"
-              component={RouterLink}
-              to="/portal"
-              sx={{ display: { xs: 'none', sm: 'block' }, mr: 2 }}
-            >
-              Жүйеге кіру
-            </Button>
-            
-            {/* API Status Indicator */}
-            <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-              <ApiStatusIndicator />
-            </Box>
-          </Box>
+          
         </Toolbar>
       </Container>
     </AppBar>

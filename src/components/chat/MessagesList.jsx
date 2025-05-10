@@ -1,14 +1,13 @@
-// src/components/chat/MessagesList.jsx
+// src/components/chat/MessagesList.jsx - Хабарламалар тізімі компоненті
 import React from 'react';
 import { Box } from '@mui/material';
 import MessageItem from './MessageItem';
 
 /**
- * Компонент для отображения списка сообщений в чате
  * Чаттағы хабарламалар тізімін көрсету компоненті
  * 
- * @param {Array} messages - Массив сообщений для отображения
- * @param {string} userType - Тип текущего пользователя для определения своих/чужих сообщений
+ * @param {Array} messages - Көрсетілетін хабарламалар массиві
+ * @param {string} userType - Өз/басқа хабарламаларын анықтау үшін ағымдағы пайдаланушы түрі
  */
 const MessagesList = ({ messages, userType }) => {
   return (

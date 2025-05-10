@@ -1,114 +1,114 @@
-// src/utils/validationUtils.js
+// src/utils/validationUtils.js - Валидация утилиталары
 
 /**
- * Проверяет корректность email адреса
- * @param {string} email - Email для проверки
- * @returns {boolean} Результат проверки
+ * Email адресінің дұрыстығын тексереді
+ * @param {string} email - Тексерілетін email
+ * @returns {boolean} Тексеру нәтижесі
  */
 export const isValidEmail = (email) => {
     if (!email) return false;
     
-    // Базовая регулярка для проверки email
+    // Email тексеруге арналған негізгі regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
   
   /**
-   * Проверяет корректность номера телефона
-   * @param {string} phone - Номер телефона для проверки
-   * @returns {boolean} Результат проверки
+   * Телефон нөірінің дұрыстығын тексереді
+   * @param {string} phone - Тексерілетін телефон нөмірі
+   * @returns {boolean} Тексеру нәтижесі
    */
   export const isValidPhone = (phone) => {
     if (!phone) return false;
     
-    // Допустим формат +7XXXXXXXXXX или 8XXXXXXXXXX
+    // +7XXXXXXXXXX немесе 8XXXXXXXXXX форматтарын қабылдаймыз
     const phoneRegex = /^(\+7|8)[0-9]{10}$/;
     return phoneRegex.test(phone.replace(/\s+/g, '').replace(/-/g, ''));
   };
   
   /**
-   * Валидирует форму создания тикета
-   * @param {object} formData - Данные формы
-   * @returns {object} Объект с ошибками (пустой, если ошибок нет)
+   * Өтініш құру формасын валидациялайды
+   * @param {object} formData - Форма деректері
+   * @returns {object} Қателер объектісі (қателер болмаса - бос)
    */
   export const validateTicketForm = (formData) => {
     const errors = {};
     
-    // Проверка обязательных полей
+    // Міндетті өрістерді тексеру
     if (!formData.subject?.trim()) {
-      errors.subject = 'Укажите тему обращения';
+      errors.subject = 'Өтініш тақырыбын көрсетіңіз';
     }
     
     if (!formData.description?.trim()) {
-      errors.description = 'Опишите вашу проблему или запрос';
+      errors.description = 'Мәселеңізді немесе сұрауыңызды сипаттаңыз';
     }
     
     if (!formData.full_name?.trim()) {
-      errors.full_name = 'Укажите ваше имя';
+      errors.full_name = 'Толық атыңызды көрсетіңіз';
     }
     
-    // Проверка email
+    // Email тексеру
     if (!formData.email?.trim()) {
-      errors.email = 'Укажите email для связи';
+      errors.email = 'Байланыс үшін email көрсетіңіз';
     } else if (!isValidEmail(formData.email)) {
-      errors.email = 'Укажите корректный email';
+      errors.email = 'Дұрыс email көрсетіңіз';
     }
     
-    // Проверка телефона (если указан)
+    // Телефон нөмірін тексеру (егер көрсетілген болса)
     if (formData.phone && !isValidPhone(formData.phone)) {
-      errors.phone = 'Укажите корректный номер телефона';
+      errors.phone = 'Дұрыс телефон нөмірін көрсетіңіз';
     }
     
     return errors;
   };
   
   /**
-   * Форматирует номер телефона в красивый вид
-   * @param {string} phone - Номер телефона
-   * @returns {string} Отформатированный номер телефона
+   * Телефон нөмірін әдемі түрде форматтайды
+   * @param {string} phone - Телефон нөмірі
+   * @returns {string} Форматталған телефон нөмірі
    */
   export const formatPhoneNumber = (phone) => {
     if (!phone) return '';
     
-    // Убираем все нецифровые символы
+    // Барлық сандық емес таңбаларды жоямыз
     const cleaned = phone.replace(/\D/g, '');
     
-    // Проверяем длину для российского номера
+    // Қазақстандық нөмір ұзындығын тексереміз
     if (cleaned.length === 11) {
-      // Форматируем как +7 (XXX) XXX-XX-XX
+      // +7 (XXX) XXX-XX-XX форматында форматтаймыз
       return `+7 (${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7, 9)}-${cleaned.substring(9, 11)}`;
     }
     
-    // Возвращаем как есть, если формат не подходит
+    // Формат сәйкес келмесе, сол күйінде қайтарамыз
     return phone;
   };
   
   /**
-   * Форматирует BIN/IIN или код компании
-   * @param {string} code - Код для форматирования
-   * @returns {string} Отформатированный код
+   * БСН/ЖСН немесе компания кодын форматтайды
+   * @param {string} code - Форматталатын код
+   * @returns {string} Форматталған код
    */
   export const formatCompanyCode = (code) => {
     if (!code) return '';
     
-    // Убираем все нецифровые символы
+    // Барлық сандық емес таңбаларды жоямыз
     const cleaned = code.replace(/\D/g, '');
     
-    // Формат для БИН/ИИН (12 цифр)
+    // БСН/ЖСН форматы (12 сан)
     if (cleaned.length === 12) {
       return `${cleaned.substring(0, 4)}-${cleaned.substring(4, 8)}-${cleaned.substring(8, 12)}`;
     }
     
-    // Возвращаем как есть для других форматов
+    // Басқа форматтар үшін сол күйінде қайтарамыз
     return code;
   };
   
   /**
-   * Проверка статуса тикета на доступность действий
-   * @param {string} status - Статус тикета
-   * @returns {boolean} Доступность действий
+   * Өтініш статусының әрекет жасауға рұқсатын тексеру
+   * @param {string} status - Өтініш статусы
+   * @returns {boolean} Әрекет жасау мүмкіндігі
    */
   export const isTicketActionable = (status) => {
-    // Нельзя выполнять действия с закрытыми тикетами
+    // Жабық және шешілген өтініштерге әрекет жасауға болмайды
     return status !== 'closed' && status !== 'resolved';
   };

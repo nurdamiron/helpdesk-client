@@ -27,6 +27,18 @@ api.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
         
+        // Добавляем информацию о пользователе для аутентификации
+        const userId = localStorage.getItem('userId');
+        const userEmail = localStorage.getItem('userEmail');
+        
+        if (userId) {
+            config.headers['x-user-id'] = userId;
+        }
+        
+        if (userEmail) {
+            config.headers['x-user-email'] = userEmail;
+        }
+        
         // Add retry count to config if not already present
         if (config.retry === undefined) {
             config.retry = 0;

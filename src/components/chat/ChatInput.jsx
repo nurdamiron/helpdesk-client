@@ -1,4 +1,4 @@
-// src/components/chat/ChatInput.jsx
+// src/components/chat/ChatInput.jsx - Чат хабарламаларын енгізу компоненті
 import React, { useRef } from 'react';
 import { 
   Box, 
@@ -14,7 +14,7 @@ import {
 } from '@mui/icons-material';
 
 /**
- * Компонент для ввода и отправки сообщений в чате
+ * Чатта хабарламаларды енгізу және жіберу компоненті
  */
 const ChatInput = ({ 
   value, 
@@ -43,7 +43,7 @@ const ChatInput = ({
       }}
     >
       <Box sx={{ display: 'flex' }}>
-        {/* Скрытый input для выбора файлов */}
+        {/* Файлдарды таңдауға арналған жасырын input */}
         <input
           type="file"
           ref={fileInputRef}
@@ -53,7 +53,7 @@ const ChatInput = ({
           disabled={disabled || sending}
         />
         
-        {/* Кнопка выбора вложений */}
+        {/* Тіркемелерді таңдау түймесі */}
         <IconButton
           color="primary"
           onClick={handleAttachmentClick}
@@ -63,11 +63,11 @@ const ChatInput = ({
           <AttachmentIcon />
         </IconButton>
         
-        {/* Поле ввода сообщения */}
+        {/* Хабарлама енгізу өрісі */}
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Введите сообщение..."
+          placeholder="Хабарламаңызды жазыңыз..."
           value={value}
           onChange={onChange}
           multiline
@@ -81,7 +81,7 @@ const ChatInput = ({
           }}
         />
         
-        {/* Кнопка отправки */}
+        {/* Жіберу түймесі */}
         <Button
           variant="contained"
           color="primary"
@@ -90,21 +90,21 @@ const ChatInput = ({
           endIcon={sending ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
           sx={{ alignSelf: 'flex-end', borderRadius: 2, height: 56 }}
         >
-          {sending ? "Отправка..." : "Отправить"}
+          {sending ? "Жіберілуде..." : "Жіберу"}
         </Button>
       </Box>
       
-      {/* Информация о соединении */}
+      {/* Байланыс туралы ақпарат */}
       {!isConnected && (
         <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-          Нет соединения с сервером. Сообщения будут отправлены при восстановлении связи.
+          Сервермен байланыс жоқ. Байланыс қалпына келтірілгенде хабарламалар жіберіледі.
         </Typography>
       )}
       
-      {/* Информация о почтовых уведомлениях */}
+      {/* Email хабарландырулары туралы ақпарат */}
       {userEmail && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          Копия сообщения будет отправлена на ваш email: {userEmail}
+          Хабарламаның көшірмесі сіздің email-ге жіберіледі: {userEmail}
         </Typography>
       )}
     </Box>

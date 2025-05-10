@@ -1,4 +1,4 @@
-// src/components/chat/ChatWindow.jsx - Fix for userType error
+// src/components/chat/ChatWindow.jsx - Анимациялары бар жақсартылған дизайн
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
@@ -10,12 +10,30 @@ import {
   Divider,
   Alert,
   Badge,
-  IconButton
+  IconButton,
+  useTheme,
+  useMediaQuery,
+  Fade,
+  Grow,
+  Zoom,
+  Avatar,
+  Tooltip,
+  LinearProgress,
+  Chip
 } from '@mui/material';
 import {
   Send as SendIcon,
   Refresh as RefreshIcon,
-  AttachFile as AttachFileIcon
+  AttachFile as AttachFileIcon,
+  Close as CloseIcon,
+  SentimentSatisfiedAlt as EmojiIcon,
+  ErrorOutline as ErrorIcon,
+  CheckCircleOutline as CheckCircleIcon,
+  SignalWifiStatusbarConnectedNoInternet4 as OfflineIcon,
+  SignalWifi4Bar as OnlineIcon,
+  Image as ImageIcon,
+  PictureAsPdf as PdfIcon,
+  InsertDriveFile as FileIcon
 } from '@mui/icons-material';
 import { formatDate } from '../../utils/dateUtils';
 import wsService from '../../services/WebSocketService';
@@ -24,11 +42,11 @@ import { ticketsApi } from '../../api/tickets';
 import { messagesApi } from '../../api/message';
 
 /**
- * Компонент окна чата для обмена сообщениями по заявке
- * @param {Object} props - Свойства компонента
- * @param {string|number} props.ticketId - ID заявки
- * @param {string} props.userEmail - Email пользователя
- * @returns {JSX.Element} Компонент окна чата
+ * Өтініш бойынша хабарламалармен алмасу үшін жақсартылған UI бар чат терезесі компоненті
+ * @param {Object} props - Компонент қасиеттері
+ * @param {string|number} props.ticketId - Өтініш ID
+ * @param {string} props.userEmail - Пайдаланушы email
+ * @returns {JSX.Element} Чат терезесі компоненті
  */
 const ChatWindow = ({ ticketId, userEmail }) => {
   const [messages, setMessages] = useState([]);
@@ -43,73 +61,85 @@ const ChatWindow = ({ ticketId, userEmail }) => {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  // Определяем тип пользователя - по умолчанию это requester (клиент)
-  // В реальном приложении это должно быть получено из состояния аутентификации
+  // Пайдаланушы түрін анықтау - әдепкі бойынша бұл requester (клиент)
+  // Нақты қосымшада бұл аутентификация күйінен алынуы керек
   const [userType] = useState('requester');
   
-  // Идентификатор пользователя - в реальном приложении должен быть получен из состояния аутентификации
+  // Пайдаланушы идентификаторы - нақты қосымшада аутентификация күйінен алынуы керек
   const userId = localStorage.getItem('userId') || '1'; 
 
-  // Инициализация WebSocket при монтировании
+  // Монтаж кезінде WebSocket инициализациясы
   useEffect(() => {
-    console.log('Initializing WebSocket connection for ticket:', ticketId);
-    wsService.init(userId, userType);
-    
-    // Subscribe to connection status
-    const unsubscribeConnection = wsService.subscribeToConnectionStatus((connected) => {
-      console.log('WebSocket connection status changed:', connected);
-      setWsConnected(connected);
+    try {
+      console.log('Өтініш үшін WebSocket байланысы инициализацияланады:', ticketId);
+      wsService.init(userId, userType);
       
-      // If reconnected, check for missed messages
-      if (connected && messages.length > 0) {
-        fetchLatestMessages();
-      }
-    });
-    
-    // Subscribe to new messages
-    const unsubscribeMessages = wsService.subscribeToMessages(ticketId, (newMessage) => {
-      console.log('New message received:', newMessage);
-      setMessages(prev => {
-        // Avoid duplicates
-        if (!prev.some(msg => msg.id === newMessage.id)) {
-          return [...prev, newMessage];
+      // Байланыс күйіне жазылу
+      const unsubscribeConnection = wsService.subscribeToConnectionStatus((connected) => {
+        console.log('WebSocket байланыс күйі өзгерді:', connected);
+        setWsConnected(connected);
+        
+        // Егер қайта қосылса, жіберілген хабарларды тексеру
+        if (connected && messages.length > 0) {
+          fetchLatestMessages();
         }
-        return prev;
       });
       
-      // If message is not from us, send read status
-      if (newMessage.sender.type !== userType || newMessage.sender.id !== userId) {
-        wsService.sendMessageStatus(newMessage.id, 'read');
-      }
-    });
-    
-    // Subscribe to status updates
-    const unsubscribeStatuses = wsService.subscribeToStatusUpdates(ticketId, (messageId, status) => {
-      console.log(`Message ${messageId} status updated to: ${status}`);
-      setMessages(prev => prev.map(msg => 
-        msg.id === messageId ? { ...msg, status } : msg
-      ));
-    });
-    
-    // Subscribe to typing indicators
-    const unsubscribeTyping = wsService.subscribeToTypingIndicators(ticketId, (userId, isTyping) => {
-      console.log(`User ${userId} typing status: ${isTyping}`);
-      setIsTyping(isTyping);
-      setTypingUserId(isTyping ? userId : null);
-    });
-    
-    // Cleanup on unmount
-    return () => {
-      unsubscribeConnection();
-      unsubscribeMessages();
-      unsubscribeStatuses();
-      unsubscribeTyping();
-      wsService.disconnect();
-    };
+      // Жаңа хабарламаларға жазылу
+      const unsubscribeMessages = wsService.subscribeToMessages(ticketId, (newMessage) => {
+        console.log('Жаңа хабарлама алынды:', newMessage);
+        setMessages(prev => {
+          // Қайталануларды болдырмау
+          if (!prev.some(msg => msg.id === newMessage.id)) {
+            return [...prev, newMessage];
+          }
+          return prev;
+        });
+        
+        // Егер хабарлама бізден емес болса, оқылған күйін жіберу
+        if (newMessage.sender.type !== userType || newMessage.sender.id !== userId) {
+          wsService.sendMessageStatus(newMessage.id, 'read');
+        }
+      });
+      
+      // Күй жаңартуларына жазылу
+      const unsubscribeStatuses = wsService.subscribeToStatusUpdates(ticketId, (messageId, status) => {
+        console.log(`Хабарлама ${messageId} күйі жаңартылды: ${status}`);
+        setMessages(prev => prev.map(msg => 
+          msg.id === messageId ? { ...msg, status } : msg
+        ));
+      });
+      
+      // Теру индикаторларына жазылу
+      const unsubscribeTyping = wsService.subscribeToTypingIndicators(ticketId, (userId, isTyping) => {
+        console.log(`Пайдаланушы ${userId} теру күйі: ${isTyping}`);
+        setIsTyping(isTyping);
+        setTypingUserId(isTyping ? userId : null);
+      });
+      
+      // Демонтаж кезінде тазалау
+      return () => {
+        try {
+          unsubscribeConnection();
+          unsubscribeMessages();
+          unsubscribeStatuses();
+          unsubscribeTyping();
+          wsService.disconnect();
+        } catch (err) {
+          console.error('WebSocket отключения ошибка:', err);
+        }
+      };
+    } catch (err) {
+      console.error('WebSocket инициализация ошибка:', err);
+      setError('Хабарламалар сервисіне қосылу мүмкін болмады');
+    }
   }, [ticketId, userId, userType, messages.length]);
 
-  // Загружаем историю сообщений при монтировании и изменении ticketId
+  // Монтаж кезінде және ticketId өзгерген кезде хабарламалар тарихын жүктеу
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -117,25 +147,25 @@ const ChatWindow = ({ ticketId, userEmail }) => {
         setError(null);
         
         const response = await ticketsApi.getTicketMessages(ticketId).catch(error => {
-          console.log('Error getting messages, falling back to alternative method');
+          console.log('Хабарламаларды алу кезінде қате, балама әдісіне өту');
           return { messages: [] };
         });
         
         if (response && response.messages) {
           setMessages(response.messages);
-          // Trying to mark messages as read
+          // Хабарламаларды оқылған деп белгілеу
           try {
             await ticketsApi.markMessagesAsRead(ticketId);
           } catch (markError) {
-            console.error('Error marking messages as read:', markError);
+            console.error('Хабарламаларды оқылған деп белгілеу кезінде қате:', markError);
           }
         } else if (response && response.status === 'success' && response.data) {
-          // Alternative response format
+          // Балама жауап форматы
           setMessages(response.data);
         }
       } catch (err) {
-        console.error('Error fetching messages:', err);
-        setError('Не удалось загрузить сообщения. Пожалуйста, попробуйте позже.');
+        console.error('Хабарламаларды жүктеу кезінде қате:', err);
+        setError('Хабарламаларды жүктеу мүмкін болмады. Кейінірек қайталап көріңіз.');
       } finally {
         setLoading(false);
       }
@@ -146,18 +176,18 @@ const ChatWindow = ({ ticketId, userEmail }) => {
     }
   }, [ticketId]);
 
-  // Прокрутка к последнему сообщению при изменении списка сообщений
+  // Хабарламалар тізімі өзгерген кезде соңғы хабарламаға жылжыту
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   /**
-   * Determine if a message is from the current user
-   * @param {Object} message - The message to check
-   * @returns {boolean} - True if the message is from the current user
+   * Хабарламаның ағымдағы пайдаланушыдан келгенін анықтау
+   * @param {Object} message - Тексерілетін хабарлама
+   * @returns {boolean} - Хабарлама ағымдағы пайдаланушыдан болса true
    */
   const isUserMessage = (message) => {
-    // Check various possible sender properties
+    // Әртүрлі мүмкін жіберуші қасиеттерін тексеру
     return (
       (message.sender?.type === userType) ||
       (message.sender_type === userType) ||
@@ -167,12 +197,12 @@ const ChatWindow = ({ ticketId, userEmail }) => {
   };
 
   /**
-   * Fetch the latest messages to ensure we have the most recent data
+   * Ең соңғы хабарламаларды жүктеу, ең өзекті деректерді қамтамасыз ету үшін
    */
   const fetchLatestMessages = async () => {
     try {
       const response = await ticketsApi.getTicketMessages(ticketId).catch(error => {
-        console.log('Error getting latest messages');
+        console.log('Соңғы хабарламаларды алу кезінде қате');
         return { messages: [] };
       });
       
@@ -180,332 +210,537 @@ const ChatWindow = ({ ticketId, userEmail }) => {
         setMessages(response.messages);
       }
     } catch (err) {
-      console.error('Error fetching latest messages:', err);
+      console.error('Соңғы хабарламаларды жүктеу кезінде қате:', err);
     }
   };
 
   /**
-   * Force reconnection to WebSocket
+   * Сервермен байланысты қайта орнату
    */
   const handleReconnect = () => {
-    wsService.disconnect();
-    setTimeout(() => {
-      wsService.init(userId, userType);
-    }, 500);
+    wsService.reconnect();
   };
 
   /**
-   * Прокрутка к последнему сообщению
+   * Чаттың соңына жылжыту
    */
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   /**
-   * Обработчик изменения текста сообщения
-   * @param {Event} e - Событие изменения
+   * Хабарлама өзгерген кезде өңдеуші
    */
   const handleMessageChange = (e) => {
     setMessage(e.target.value);
     
-    // Отправка индикатора набора текста
-    if (wsConnected) {
-      wsService.sendTypingStatus(ticketId, true);
+    // Теру күйін жіберу
+    if (e.target.value && !typingTimeoutRef.current) {
+      wsService.sendTypingIndicator(ticketId, true);
       
-      // Сбрасываем предыдущий таймаут и устанавливаем новый
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
+      // Теру индикаторын 2 секундтан кейін тазалау
       typingTimeoutRef.current = setTimeout(() => {
-        wsService.sendTypingStatus(ticketId, false);
-      }, 3000);
+        wsService.sendTypingIndicator(ticketId, false);
+        typingTimeoutRef.current = null;
+      }, 2000);
+    } else if (!e.target.value && typingTimeoutRef.current) {
+      // Егер өріс бос болса және таймер болса, таймерді тазалап, теру күйін жіберу
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+      wsService.sendTypingIndicator(ticketId, false);
     }
   };
 
   /**
-   * Handle file button click
+   * Файл тіркеу түймесі басылған кезде
    */
   const handleAttachmentClick = () => {
     fileInputRef.current.click();
   };
 
   /**
-   * Handle file selection
+   * Файл таңдаған кезде өңдеуші
    */
   const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files || []);
+    const selectedFiles = Array.from(e.target.files);
     
-    // Check file size limit (max 5MB per file)
-    const validFiles = selectedFiles.filter(file => file.size <= 5 * 1024 * 1024);
+    // Үлкен файлдарды тексеру (10MB шектеуі)
+    const validFiles = selectedFiles.filter(file => file.size <= 10 * 1024 * 1024);
     
     if (validFiles.length !== selectedFiles.length) {
-      alert('Некоторые файлы не были добавлены, так как их размер превышает 5 МБ');
+      setError('10MB-дан үлкен файлдар жүктелмеді.');
+      setTimeout(() => setError(null), 3000);
     }
     
-    setFiles(prev => [...prev, ...validFiles]);
-    e.target.value = '';
+    setFiles(prevFiles => [...prevFiles, ...validFiles]);
+    e.target.value = null; // Сол файлды қайта таңдау мүмкіндігі үшін
   };
 
   /**
-   * Remove file from attachments list
+   * Таңдалған файлды жою
    */
   const removeFile = (index) => {
-    setFiles(files.filter((_, i) => i !== index));
+    setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
   };
 
   /**
-   * Отправка сообщения
-   * @param {Event} e - Событие отправки формы
+   * Хабарлама жіберу
    */
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
     if (!message.trim() && files.length === 0) return;
-
+    
     try {
       setSending(true);
       
-      // Cancel typing indicator
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      if (wsConnected) {
-        wsService.sendTypingStatus(ticketId, false);
-      }
-      
-      // Upload attachments first, if any
-      const uploadedAttachments = [];
-      if (files.length > 0) {
-        for (const file of files) {
-          try {
-            const response = await ticketsApi.uploadAttachment(ticketId, file);
-            
-            if (response && (response.attachment?.id || response.id)) {
-              uploadedAttachments.push(response.attachment?.id || response.id);
-            }
-          } catch (fileErr) {
-            console.error('Error uploading file:', fileErr);
-          }
-        }
-      }
-      
-      // Try to send the message via WebSocket first
-      let messageSent = false;
-      if (wsConnected) {
-        messageSent = wsService.sendChatMessage(ticketId, message.trim(), uploadedAttachments);
-      }
-      
-      // If WebSocket fails, use REST API as fallback
-      if (!messageSent) {
-        await ticketsApi.addMessage(ticketId, {
-          body: message.trim(),
-          attachments: uploadedAttachments,
-          sender_type: userType,
-          sender_id: userId
-        });
-      }
-      
-      // Update UI optimistically with a temporary message
+      // Жіберілетін хабарламаны алдын-ала көрсету
+      const tempId = `temp-${Date.now()}`;
       const tempMessage = {
-        id: `temp-${Date.now()}`,
+        id: tempId,
         content: message.trim(),
-        sender: {
-          id: userId,
-          type: userType,
-          name: userType === 'requester' ? 'Вы' : 'Администратор'
-        },
         created_at: new Date().toISOString(),
+        sender: { type: userType, id: userId },
+        attachments: files.map(file => ({
+          file_name: file.name,
+          mime_type: file.type,
+          size: file.size,
+          _file: file, // Клиенттік жағында ғана пайдаланылады
+          _url: URL.createObjectURL(file) // Алдын-ала көрсету үшін
+        })),
         status: 'sending'
       };
       
       setMessages(prev => [...prev, tempMessage]);
       
-      // Clear form
+      // Тіркемелер (егер болса)
+      const attachmentIds = [];
+      if (files.length > 0) {
+        for (const file of files) {
+          try {
+            const response = await ticketsApi.uploadAttachment(ticketId, file);
+            if (response && response.id) {
+              attachmentIds.push(response.id);
+            }
+          } catch (err) {
+            console.error('Тіркемені жүктеу кезінде қате:', err);
+          }
+        }
+      }
+      
+      // Хабарламаны жіберу
+      const response = await messagesApi.sendMessage(ticketId, {
+        content: message.trim(),
+        attachment_ids: attachmentIds.length > 0 ? attachmentIds : undefined
+      });
+      
+      // Уақытша хабарламаны нақты хабарламамен ауыстыру
+      if (response && response.status === 'success') {
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempId ? { ...response.message, status: 'sent' } : msg
+        ));
+      }
+      
+      // Жіберілген соң өрісті тазалау
       setMessage('');
       setFiles([]);
-      setError(null);
       
-      // Fetch latest messages after a short delay
-      setTimeout(() => {
-        fetchLatestMessages();
-      }, 1000);
     } catch (err) {
-      console.error('Error sending message:', err);
-      setError('Не удалось отправить сообщение. Пожалуйста, попробуйте позже.');
+      console.error('Хабарлама жіберу кезінде қате:', err);
+      setError('Хабарламаны жіберу мүмкін болмады. Кейінірек қайталап көріңіз.');
+      
+      // Хабарламаны қате күйіне жаңарту
+      setMessages(prev => prev.map(msg => 
+        msg.status === 'sending' ? { ...msg, status: 'error' } : msg
+      ));
+      
     } finally {
       setSending(false);
     }
   };
 
-  return (
-    <Paper elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <Box sx={{ 
-        p: 2, 
-        bgcolor: 'primary.main', 
-        color: 'white',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <Typography variant="h6">Обсуждение заявки #{ticketId}</Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {wsConnected ? (
-            <Badge color="success" variant="dot" sx={{ '& .MuiBadge-badge': { right: -4 } }}>
-              <Typography variant="caption">Подключено</Typography>
-            </Badge>
-          ) : (
-            <>
-              <Badge color="error" variant="dot" sx={{ '& .MuiBadge-badge': { right: -4 } }}>
-                <Typography variant="caption" sx={{ mr: 1 }}>Офлайн</Typography>
-              </Badge>
-              <IconButton size="small" color="inherit" onClick={handleReconnect}>
-                <RefreshIcon fontSize="small" />
+  /**
+   * Файл түріне сәйкес иконканы алу
+   */
+  const getFileIcon = (file) => {
+    if (file.type.startsWith('image/')) {
+      return <ImageIcon />;
+    } else if (file.type === 'application/pdf') {
+      return <PdfIcon />;
+    } else {
+      return <FileIcon />;
+    }
+  };
+
+  /**
+   * Тіркелген файлдардың алдын-ала көрінісі
+   */
+  const renderFilePreview = () => {
+    if (files.length === 0) return null;
+    
+    return (
+      <Box sx={{ mt: 1, mb: 2 }}>
+        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+          Таңдалған файлдар: {files.length}
+        </Typography>
+        
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {files.map((file, index) => (
+            <Box
+              key={index}
+              sx={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                p: 1,
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+              }}
+            >
+              {getFileIcon(file)}
+              <Typography variant="body2" sx={{ ml: 1, maxWidth: 150 }} noWrap>
+                {file.name}
+              </Typography>
+              
+              <IconButton
+                size="small"
+                onClick={() => removeFile(index)}
+                sx={{
+                  p: 0.5,
+                  ml: 0.5,
+                  '&:hover': { color: 'error.main' }
+                }}
+              >
+                <CloseIcon fontSize="small" />
               </IconButton>
-            </>
-          )}
+            </Box>
+          ))}
         </Box>
       </Box>
+    );
+  };
 
-      {/* Error message */}
+  // Байланыс күйін көрсету (онлайн/офлайн)
+  const renderConnectionStatus = () => {
+    return (
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          p: 1,
+          bgcolor: wsConnected ? 'success.light' : 'warning.light',
+          color: wsConnected ? 'success.contrastText' : 'warning.contrastText',
+          borderRadius: 1,
+          mb: 2,
+          opacity: 0.9,
+          transition: 'all 0.3s ease'
+        }}
+      >
+        {wsConnected ? (
+          <>
+            <OnlineIcon fontSize="small" sx={{ mr: 1 }} />
+            <Typography variant="body2">
+              Чат онлайн - хабарлар дереу жеткізіледі
+            </Typography>
+          </>
+        ) : (
+          <>
+            <OfflineIcon fontSize="small" sx={{ mr: 1 }} />
+            <Typography variant="body2">
+              Офлайн режим - байланыс қалпына келгенде хабарлар жіберіледі
+            </Typography>
+            <Button 
+              size="small" 
+              onClick={handleReconnect} 
+              sx={{ ml: 1, minWidth: 'auto', color: 'inherit' }}
+            >
+              <RefreshIcon fontSize="small" />
+            </Button>
+          </>
+        )}
+      </Box>
+    );
+  };
+
+  // Егер жүктеу күйінде болса
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          p: 3
+        }}
+      >
+        <CircularProgress sx={{ mb: 2 }} />
+        <Typography variant="body1">Хабарламалар жүктелуде...</Typography>
+      </Box>
+    );
+  }
+
+  // Егер қате болса
+  if (error && messages.length === 0) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          p: 3
+        }}
+      >
+        <ErrorIcon color="error" sx={{ fontSize: 48, mb: 2 }} />
+        <Typography variant="body1" color="error">{error}</Typography>
+        <Button 
+          variant="outlined" 
+          color="primary" 
+          sx={{ mt: 2 }}
+          onClick={() => window.location.reload()}
+        >
+          Қайта жүктеу
+        </Button>
+      </Box>
+    );
+  }
+
+  // Теру индикаторын көрсету
+  const renderTypingIndicator = () => {
+    if (!isTyping) return null;
+    
+    return (
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          p: 1,
+          ml: 2, 
+          mb: 1,
+          maxWidth: 'fit-content',
+          borderRadius: 1,
+          bgcolor: 'background.paper',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}
+      >
+        <Typography variant="caption" color="text.secondary">
+          Біреу хабарлама теруде
+        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            ml: 1,
+            alignItems: 'center'
+          }}
+        >
+          {[0, 1, 2].map((dot) => (
+            <Box
+              key={dot}
+              sx={{
+                width: 4,
+                height: 4,
+                mx: 0.2,
+                borderRadius: '50%',
+                bgcolor: 'text.secondary',
+                animation: 'typing-dot 1.4s infinite ease-in-out both',
+                animationDelay: `${dot * 0.2}s`,
+                '@keyframes typing-dot': {
+                  '0%, 80%, 100%': { opacity: 0.3, transform: 'scale(0.8)' },
+                  '40%': { opacity: 1, transform: 'scale(1)' }
+                }
+              }}
+            />
+          ))}
+        </Box>
+      </Box>
+    );
+  };
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Хабарламалар саны мен күйін көрсететін жоғарғы бар */}
+      <Box
+        sx={{
+          p: 1.5,
+          display: 'flex',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.default'
+        }}
+      >
+        <Typography variant="subtitle2" color="text.secondary">
+          {messages.length === 0 
+            ? 'Хабарлама жоқ. Жаңа хабарлама жіберіңіз.'
+            : `${messages.length} хабарлама`
+          }
+        </Typography>
+        
+        {wsConnected ? (
+          <Chip 
+            size="small" 
+            color="success" 
+            label="Онлайн" 
+            sx={{ height: 24 }}
+          />
+        ) : (
+          <Chip 
+            size="small" 
+            color="warning" 
+            label="Офлайн" 
+            sx={{ height: 24 }}
+          />
+        )}
+      </Box>
+      
+      {/* Қате хабарламасы, егер қате пайда болса */}
       {error && (
-        <Alert severity="error" sx={{ m: 2 }}>
+        <Alert 
+          severity="error" 
+          onClose={() => setError(null)}
+          sx={{ m: 2, borderRadius: 1 }}
+        >
           {error}
         </Alert>
       )}
-
-      {/* Messages area */}
+      
+      {/* Хабарламалар контейнері */}
       <Box
+        ref={chatContainerRef}
         sx={{
-          flexGrow: 1,
+          flex: 1,
+          overflow: 'auto',
           p: 2,
-          overflowY: 'auto',
-          maxHeight: '500px',
-          bgcolor: '#f9f9f9',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          bgcolor: theme.palette.mode === 'dark' 
+            ? 'background.default' 
+            : 'rgba(240, 242, 245, 0.5)'
         }}
       >
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : messages.length === 0 ? (
-          <Box sx={{ textAlign: 'center', p: 3 }}>
-            <Typography color="text.secondary">
-              Начните обсуждение вашей заявки!
+        {renderConnectionStatus()}
+        
+        {messages.length === 0 ? (
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              p: 3,
+              color: 'text.secondary',
+              textAlign: 'center'
+            }}
+          >
+            <Typography variant="h6">Әзірге хабарламалар жоқ</Typography>
+            <Typography variant="body2" sx={{ mt: 1, maxWidth: 300 }}>
+              Осы өтініш бойынша талқылауды бастау үшін хабарлама жіберіңіз
             </Typography>
           </Box>
         ) : (
-          messages.map((message, index) => (
-            <MessageItem 
-              key={message.id || index} 
-              message={message} 
-              isOwnMessage={isUserMessage(message)}
-              userType={userType} 
-            />
-          ))
-        )}
-
-        {/* Typing indicator */}
-        {isTyping && (
-          <Box sx={{ p: 2, alignSelf: 'flex-start' }}>
-            <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
-              {userType === 'requester' ? 'Администратор печатает...' : 'Клиент печатает...'}
-            </Typography>
-          </Box>
+          <>
+            {messages.map((msg, index) => (
+              <Fade key={msg.id || index} in={true} timeout={300}>
+                <Box sx={{ mb: 1, display: 'flex', flexDirection: 'column' }}>
+                  <MessageItem
+                    message={msg}
+                    isUserMessage={isUserMessage(msg)}
+                  />
+                </Box>
+              </Fade>
+            ))}
+            {renderTypingIndicator()}
+          </>
         )}
         
-        {/* Reference for auto-scroll */}
         <div ref={messagesEndRef} />
       </Box>
-
-      {/* Message input form */}
-      <Box sx={{ p: 2, borderTop: '1px solid #e0e0e0' }}>
-        <form onSubmit={handleSendMessage}>
-          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-            {/* File attachments */}
-            <Box sx={{ mb: 1 }}>
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleFileChange}
-                multiple
-              />
-              
-              {files.length > 0 && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="caption" gutterBottom>
-                    Вложения ({files.length}):
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {files.map((file, idx) => (
-                      <Chip 
-                        key={idx}
-                        label={`${file.name} (${(file.size / 1024).toFixed(0)} KB)`}
-                        onDelete={() => removeFile(idx)}
-                        size="small"
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </Box>
-            
-            <Box sx={{ display: 'flex' }}>
-              <IconButton 
-                color="primary" 
-                onClick={handleAttachmentClick}
-                disabled={sending}
-              >
-                <AttachFileIcon />
-              </IconButton>
-              
-              <TextField
-                fullWidth
-                variant="outlined"
-                placeholder="Введите сообщение..."
-                value={message}
-                onChange={handleMessageChange}
-                size="small"
-                disabled={sending}
-                sx={{ mx: 1 }}
-                multiline
-                maxRows={4}
-              />
-              
-              <Button
-                variant="contained"
-                color="primary"
-                type="submit"
-                disabled={sending || (!message.trim() && files.length === 0)}
-                endIcon={sending ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
-              >
-                {sending ? "Отправка..." : "Отправить"}
-              </Button>
-            </Box>
-          </Box>
+      
+      {/* Тіркемелер және файл алдын-ала көрінісі */}
+      {renderFilePreview()}
+      
+      {/* Хабарлама жіберу формасы */}
+      <Box
+        component="form"
+        onSubmit={handleSendMessage}
+        sx={{
+          p: 2,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        {/* Теру жолағы */}
+        <Box sx={{ display: 'flex' }}>
+          {/* Жасырын файл таңдау өрісі */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            onChange={handleFileChange}
+            multiple
+          />
           
-          {/* Connection status & email info */}
-          <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between' }}>
-            <Typography variant="caption" color="text.secondary">
-              {wsConnected ? 
-                "Соединение установлено" : 
-                "Работа в автономном режиме. Сообщения будут отправлены при восстановлении соединения."
+          {/* Тіркеме түймесі */}
+          <IconButton 
+            color="primary" 
+            onClick={handleAttachmentClick}
+            disabled={sending}
+            sx={{ mr: 1 }}
+          >
+            <AttachFileIcon />
+          </IconButton>
+          
+          {/* Хабарлама енгізу өрісі */}
+          <TextField
+            fullWidth
+            multiline
+            maxRows={4}
+            placeholder="Хабарламаңызды жазыңыз..."
+            value={message}
+            onChange={handleMessageChange}
+            variant="outlined"
+            disabled={sending}
+            sx={{
+              mr: 1,
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
               }
-            </Typography>
-            
-            {userEmail && (
-              <Typography variant="caption" color="text.secondary">
-                Копия на: {userEmail}
-              </Typography>
-            )}
-          </Box>
-        </form>
+            }}
+          />
+          
+          {/* Жіберу түймесі */}
+          <Button
+            variant="contained"
+            color="primary"
+            type="submit"
+            disabled={sending || (!message.trim() && files.length === 0)}
+            startIcon={sending ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
+            sx={{
+              minWidth: isMobile ? 'auto' : 100,
+              borderRadius: 2,
+              height: 56
+            }}
+          >
+            {sending ? 'Жіберілуде...' : 'Жіберу'}
+          </Button>
+        </Box>
       </Box>
-    </Paper>
+    </Box>
   );
 };
 

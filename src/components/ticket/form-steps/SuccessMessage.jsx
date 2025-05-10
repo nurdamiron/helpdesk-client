@@ -134,7 +134,7 @@ const SuccessMessage = ({ ticket, email, onCreateNew, emailSent = null }) => {
             gutterBottom
             sx={{ 
               fontWeight: 'bold',
-              color: 'white',
+              color: 'text.primary',
             }}
           >
             Өтініш қабылданды
@@ -143,7 +143,7 @@ const SuccessMessage = ({ ticket, email, onCreateNew, emailSent = null }) => {
         
         <Fade in={showIcon} timeout={1200}>
           <Typography variant="h6" color="text.secondary">
-            Сіздің <Box component="span" sx={{ fontWeight: 'bold', color: 'white' }}>#{ticket.id}</Box> өтінішіңіз сәтті тіркелді
+            Сіздің <Box component="span" sx={{ fontWeight: 'bold', color: 'primary.main' }}>#{ticket.id}</Box> өтінішіңіз сәтті тіркелді
           </Typography>
         </Fade>
       </Box>
@@ -211,7 +211,7 @@ const SuccessMessage = ({ ticket, email, onCreateNew, emailSent = null }) => {
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom sx={{ 
                 fontWeight: 'bold',
-                color: 'white'
+                color: 'text.primary'
               }}>
                 Өтініш туралы ақпарат
               </Typography>
@@ -230,7 +230,7 @@ const SuccessMessage = ({ ticket, email, onCreateNew, emailSent = null }) => {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
                 <Typography variant="body2" sx={{ py: 0.5 }}>
                   <Box component="span" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Өтініш нөмірі:</Box>{' '}
-                  <Box component="span" sx={{ fontWeight: 'bold', color: 'white' }}>#{ticket.id}</Box>
+                  <Box component="span" sx={{ fontWeight: 'bold', color: 'primary.main' }}>#{ticket.id}</Box>
                 </Typography>
                 
                 <Typography variant="body2" sx={{ py: 0.5 }}>
@@ -245,7 +245,6 @@ const SuccessMessage = ({ ticket, email, onCreateNew, emailSent = null }) => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   px: 1.5,
-                  py: 0.5,
                   borderRadius: 10,
                   bgcolor: 'info.lighter',
                   color: 'info.darker'

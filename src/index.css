@@ -1,6 +1,6 @@
 /* src/index.css */
 :root {
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-family: "Montserrat", "Roboto", "Arial", sans-serif;
   font-size: 16px;
   line-height: 1.5;
   font-weight: 400;
@@ -13,6 +13,22 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  /* Переменные для анимаций */
+  --transition-fast: 0.2s;
+  --transition-medium: 0.3s;
+  --transition-slow: 0.5s;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+
+  /* Переменные для шрифта */
+  --font-family: "Montserrat", sans-serif;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 }
 
 * {
@@ -24,18 +40,28 @@
 body {
   min-width: 320px;
   min-height: 100vh;
+  font-family: var(--font-family);
 }
 
 a {
   text-decoration: none;
   color: #1976d2;
+  transition: color var(--transition-fast) var(--easing-default);
+  font-family: var(--font-family);
 }
 
 a:hover {
   text-decoration: underline;
+  color: #0d47a1;
 }
 
-/* Анимации для элементов */
+button, 
+.button {
+  font-family: var(--font-family);
+  transition: all var(--transition-medium) var(--easing-default);
+}
+
+/* Улучшенные анимации для элементов */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -45,8 +71,161 @@ a:hover {
   }
 }
 
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Классы для анимаций */
 .fade-in {
-  animation: fadeIn 0.5s ease-in-out;
+  animation: fadeIn 0.5s var(--easing-decelerate) forwards;
+}
+
+.slide-up {
+  animation: slideUp 0.5s var(--easing-decelerate) forwards;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.5s var(--easing-decelerate) forwards;
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.5s var(--easing-decelerate) forwards;
+}
+
+.scale-in {
+  animation: scaleIn 0.5s var(--easing-decelerate) forwards;
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+.bounce {
+  animation: bounce 2s infinite;
+}
+
+/* Классы для задержки анимаций */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* Классы для переходов */
+.transition-all {
+  transition: all var(--transition-medium) var(--easing-default);
+}
+
+.transition-transform {
+  transition: transform var(--transition-medium) var(--easing-default);
+}
+
+.transition-opacity {
+  transition: opacity var(--transition-medium) var(--easing-default);
+}
+
+/* Эффект ripple для элементов интерфейса */
+.ripple-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-effect::after {
+  content: "";
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform 0.5s, opacity 1s;
+}
+
+.ripple-effect:active::after {
+  transform: scale(0, 0);
+  opacity: 0.3;
+  transition: 0s;
 }
 
 /* Для доступности */
@@ -67,9 +246,14 @@ a:hover {
   :root {
     font-size: 14px;
   }
+  
+  /* Уменьшаем размер/интенсивность анимаций на мобильных устройствах */
+  .bounce, .pulse {
+    animation-duration: 1.5s;
+  }
 }
 
-/* Дополнительные стили для скролла сообщений в чате */
+/* Улучшенные стили для скролла сообщений в чате */
 .messages-container {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
@@ -86,6 +270,44 @@ a:hover {
 .messages-container::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
+  transition: background-color var(--transition-fast) var(--easing-default);
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Material Design вдохновлённые стили для элементов */
+.card-hover {
+  transition: all var(--transition-medium) var(--easing-default);
+}
+
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.button-hover {
+  transition: all var(--transition-medium) var(--easing-default);
+}
+
+.button-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Адаптивный дизайн для контейнеров */
+.responsive-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+@media (max-width: 768px) {
+  .responsive-container {
+    padding: 0 10px;
+  }
 }
 
 /* Стили для печати */
@@ -97,5 +319,11 @@ a:hover {
   
   .no-print {
     display: none !important;
+  }
+  
+  .fade-in, .slide-up, .scale-in, .bounce, .pulse {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
