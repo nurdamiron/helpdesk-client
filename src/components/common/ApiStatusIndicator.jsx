@@ -8,7 +8,7 @@ import apiService from '../../api/index';
 const ApiStatusIndicator = () => {
   const [apiStatus, setApiStatus] = useState({
     isHealthy: undefined,
-    message: 'Checking API status...'
+    message: 'API күйі тексерілуде...'
   });
 
   const checkApiStatus = async () => {
@@ -17,20 +17,20 @@ const ApiStatusIndicator = () => {
       setApiStatus({
         isHealthy: status.isHealthy,
         message: status.isHealthy 
-          ? 'API server is online' 
-          : `API server is offline: ${status.error?.message}`
+          ? 'API сервері қосылған' 
+          : `API сервері өшірілген: ${status.error?.message}`
       });
     } catch (error) {
       setApiStatus({
         isHealthy: false,
-        message: `Failed to check API status: ${error.message}`
+        message: `API күйін тексеру мүмкін болмады: ${error.message}`
       });
     }
   };
 
   useEffect(() => {
     checkApiStatus();
-    // Check every 30 seconds
+    // 30 секунд сайын тексеру
     const interval = setInterval(checkApiStatus, 30000);
     return () => clearInterval(interval);
   }, []);

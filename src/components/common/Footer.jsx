@@ -13,7 +13,7 @@ import { Link as RouterLink } from 'react-router-dom';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  const companyName = import.meta.env.VITE_COMPANY_NAME || 'СтройПомощь';
+  const companyName = import.meta.env.VITE_COMPANY_NAME || 'Құрылыс Көмегі';
   
   return (
     <Box
@@ -37,7 +37,7 @@ const Footer = () => {
               </Typography>
             </Box>
             <Typography variant="body2" sx={{ mb: 2 }}>
-              Профессиональные строительные решения для бизнеса. Проектирование, строительство и технический надзор.
+              Бизнеске арналған кәсіби құрылыс шешімдері. Жобалау, құрылыс және техникалық қадағалау.
             </Typography>
             
             <Box sx={{ display: 'flex', gap: 1, mt: 3 }}>
@@ -56,7 +56,7 @@ const Footer = () => {
           {/* Колонка с навигацией */}
           {/* <Grid item xs={12} sm={6} md={4}>
             <Typography variant="h6" component="h3" gutterBottom>
-              Карта сайта
+              Сайт картасы
             </Typography>
             <Box component="nav" sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Link
@@ -65,7 +65,7 @@ const Footer = () => {
                 color="inherit"
                 underline="hover"
               >
-                Главная
+                Басты бет
               </Link>
               <Link
                 component={RouterLink}
@@ -73,7 +73,7 @@ const Footer = () => {
                 color="inherit"
                 underline="hover"
               >
-                Услуги
+                Қызметтер
               </Link>
               <Link
                 component={RouterLink}
@@ -81,7 +81,7 @@ const Footer = () => {
                 color="inherit"
                 underline="hover"
               >
-                Проекты
+                Жобалар
               </Link>
               <Link
                 component={RouterLink}
@@ -89,7 +89,7 @@ const Footer = () => {
                 color="inherit"
                 underline="hover"
               >
-                О компании
+                Компания туралы
               </Link>
               <Link
                 component={RouterLink}
@@ -97,7 +97,7 @@ const Footer = () => {
                 color="inherit"
                 underline="hover"
               >
-                Вакансии
+                Бос орындар
               </Link>
               <Link
                 component={RouterLink}
@@ -105,7 +105,7 @@ const Footer = () => {
                 color="inherit"
                 underline="hover"
               >
-                Контакты
+                Байланыс
               </Link>
               <Link
                 component={RouterLink}
@@ -113,7 +113,7 @@ const Footer = () => {
                 color="inherit"
                 underline="hover"
               >
-                Корпоративный портал
+                Корпоративтік портал
               </Link>
             </Box>
           </Grid> */}
@@ -121,7 +121,7 @@ const Footer = () => {
           {/* Колонка с контактами */}
           <Grid item xs={12} sm={6} md={4}>
             <Typography variant="h6" component="h3" gutterBottom>
-              Контактная информация
+              Байланыс ақпараты
             </Typography>
             <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
               <LocationIcon sx={{ mr: 1, color: 'rgba(255,255,255,0.8)' }} />
@@ -151,7 +151,7 @@ const Footer = () => {
             </Box>
             
             <Typography variant="body2" sx={{ mt: 2 }}>
-              Режим работы: Пн-Пт с 9:00 до 18:00
+              Жұмыс уақыты: Дү-Жм 9:00-ден 18:00-ге дейін
             </Typography>
           </Grid>
         </Grid>
@@ -161,7 +161,7 @@ const Footer = () => {
         {/* Нижняя часть футера */}
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'center', sm: 'flex-start' } }}>
           <Typography variant="body2" sx={{ mb: { xs: 2, sm: 0 } }}>
-            © {currentYear} {companyName}. Все права защищены
+            © {currentYear} {companyName}. Барлық құқықтар қорғалған
           </Typography>
           <Box>
             <Link
@@ -169,14 +169,14 @@ const Footer = () => {
               underline="hover"
               sx={{ mx: 1 }}
             >
-              Политика конфиденциальности
+              Құпиялылық саясаты
             </Link>
             <Link
               color="inherit"
               underline="hover"
               sx={{ mx: 1 }}
             >
-              Правовая информация
+              Құқықтық ақпарат
             </Link>
           </Box>
         </Box>

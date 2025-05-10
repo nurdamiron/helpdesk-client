@@ -78,14 +78,14 @@ const Header = () => {
               textDecoration: 'none',
             }}
           >
-            СтройПомощь | Корпоративный сайт
+            Құрылыс Көмегі | Корпоративтік сайт
           </Typography>
 
           {/* Menu - mobile */}
           <Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
             <IconButton
               size="large"
-              aria-label="меню навигации"
+              aria-label="навигация мәзірі"
               aria-controls="menu-appbar"
               aria-haspopup="true"
               onClick={toggleDrawer(true)}
@@ -108,7 +108,7 @@ const Header = () => {
               >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', p: 2, alignItems: 'center' }}>
                   <Typography variant="h6" component="div">
-                    Меню
+                    Мәзір
                   </Typography>
                   <IconButton onClick={toggleDrawer(false)}>
                     <CloseIcon />
@@ -143,7 +143,7 @@ const Header = () => {
               textDecoration: 'none',
             }}
           >
-            СтройПомощь
+            Құрылыс Көмегі
           </Typography>
 
           {/* Menu - desktop */}
@@ -169,7 +169,7 @@ const Header = () => {
               to="/portal"
               sx={{ display: { xs: 'none', sm: 'block' }, mr: 2 }}
             >
-              Войти в систему
+              Жүйеге кіру
             </Button>
             
             {/* API Status Indicator */}

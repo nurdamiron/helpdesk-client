@@ -8,7 +8,7 @@ const NotFoundPage = () => {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(10);
   
-  // Автоматическое перенаправление на главную страницу через 10 секунд
+  // 10 секундтан кейін басты бетке автоматты түрде бағыттау
   useEffect(() => {
     const timer = setTimeout(() => {
       navigate('/');
@@ -44,11 +44,11 @@ const NotFoundPage = () => {
         </Typography>
         
         <Typography variant="h4" component="h2" gutterBottom>
-          Страница не найдена
+          Бет табылмады
         </Typography>
         
         <Typography variant="body1" sx={{ mb: 4 }}>
-          Похоже, вы пытаетесь получить доступ к странице, которая была перемещена или не существует.
+          Сіз жылжытылған немесе жоқ бетке кіруге тырысып жатқан сияқтысыз.
         </Typography>
         
         <Button 
@@ -60,11 +60,11 @@ const NotFoundPage = () => {
           size="large"
           sx={{ mb: 2 }}
         >
-          Вернуться на главную
+          Басты бетке оралу
         </Button>
         
         <Typography variant="body2" color="text.secondary">
-          Вы будете автоматически перенаправлены на главную страницу через {countdown} секунд.
+          Сіз {countdown} секундтан кейін басты бетке автоматты түрде бағытталасыз.
         </Typography>
       </Paper>
     </Container>

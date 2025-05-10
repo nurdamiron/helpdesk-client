@@ -1,16 +1,106 @@
-// src/utils/formatters.js
+// src/utils/formatters.js - Пішімдеушілер
 import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { TICKET_STATUSES, TICKET_PRIORITIES, TICKET_CATEGORIES } from './constants';
 
 /**
- * Форматирует дату и время
- * @param {string|Date} date - Дата для форматирования
- * @param {string} formatString - Строка формата (по умолчанию DD.MM.YYYY HH:mm)
- * @returns {string} - Отформатированная дата
+ * Күн мен уақытты пішімдеу
+ * @param {string|Date} date - Пішімделетін күн
+ * @param {string} formatString - Пішім жолы (әдепкі DD.MM.YYYY HH:mm)
+ * @returns {string} - Пішімделген күн
  */
 export const formatDate = (date, formatString = 'dd.MM.yyyy HH:mm') => {
-  if (!date) return 'Не указано';
+  if (!date) return 'Көрсетілмеген';
   return format(new Date(date), formatString, { locale: ru });
+};
+
+/**
+ * Өтініш күйін көрсету үшін пішімдеу
+ * @param {string} status - Күй коды
+ * @returns {Object} - Аудармасы мен түсі бар нысан
+ */
+export const formatTicketStatus = (status) => {
+  switch (status) {
+    case 'new':
+      return { text: 'Жаңа', color: 'info' };
+    case 'in_progress':
+      return { text: 'Өңделуде', color: 'warning' };
+    case 'resolved':
+      return { text: 'Шешілді', color: 'success' };
+    case 'closed':
+      return { text: 'Жабылды', color: 'default' };
+    default:
+      return { text: status || 'Белгісіз', color: 'default' };
+  }
+};
+
+/**
+ * Өтініш басымдығын көрсету үшін пішімдеу
+ * @param {string} priority - Басымдық коды
+ * @returns {Object} - Аудармасы мен түсі бар нысан
+ */
+export const formatTicketPriority = (priority) => {
+  switch (priority) {
+    case 'low':
+      return { text: 'Төмен', color: 'success' };
+    case 'medium':
+      return { text: 'Орташа', color: 'info' };
+    case 'high':
+      return { text: 'Жоғары', color: 'warning' };
+    case 'urgent':
+      return { text: 'Шұғыл', color: 'error' };
+    default:
+      return { text: priority || 'Стандартты', color: 'info' };
+  }
+};
+
+/**
+ * Қосымша бағанды жергілікті өңдеу мүмкіндігімен өтініш пішімдеу
+ * @param {Object} ticket - Өтініш нысаны
+ * @param {Object} options - Пішімдеу параметрлері
+ * @returns {Object} - Метадеректермен пішімделген өтініш
+ */
+export const formatTicket = (ticket, options = {}) => {
+  // Егер өтініш болмаса, бос нысан қайтарамыз
+  if (!ticket) return {};
+  
+  // Күйі мен басымдықты пішімдеу
+  const status = formatTicketStatus(ticket.status);
+  const priority = formatTicketPriority(ticket.priority);
+  
+  // Метадеректерді талдау (егер JSON жолы болса)
+  let metadata = ticket.metadata;
+  if (typeof metadata === 'string' && metadata) {
+    try {
+      metadata = JSON.parse(metadata);
+    } catch (e) {
+      console.error('Метадеректерді талдау қатесі:', e);
+      metadata = {};
+    }
+  }
+
+  // Өтініш берушінің метадеректерін талдау (егер JSON жолы болса)
+  let requesterMetadata = ticket.requester_metadata;
+  if (typeof requesterMetadata === 'string' && requesterMetadata) {
+    try {
+      requesterMetadata = JSON.parse(requesterMetadata);
+    } catch (e) {
+      console.error('Өтініш беруші метадеректерін талдау қатесі:', e);
+      requesterMetadata = {};
+    }
+  }
+  
+  // Пішімделген өтінішті қайтару
+  return {
+    ...ticket,
+    statusText: status.text,
+    statusColor: status.color,
+    priorityText: priority.text,
+    priorityColor: priority.color,
+    metadata: metadata || {},
+    requesterMetadata: requesterMetadata || {},
+    ...options
+  };
 };
 
 /**
@@ -21,46 +111,6 @@ export const formatDate = (date, formatString = 'dd.MM.yyyy HH:mm') => {
 export const formatRelativeTime = (date) => {
   if (!date) return '';
   return formatDistanceToNow(new Date(date), { addSuffix: true, locale: ru });
-};
-
-/**
- * Форматирует статус тикета для отображения
- * @param {string} status - Код статуса
- * @returns {Object} - Объект с локализованным текстом и цветом
- */
-export const formatTicketStatus = (status) => {
-  switch (status) {
-    case 'new':
-      return { text: 'Новый', color: 'info' };
-    case 'in_progress':
-      return { text: 'В обработке', color: 'warning' };
-    case 'resolved':
-      return { text: 'Решён', color: 'success' };
-    case 'closed':
-      return { text: 'Закрыт', color: 'default' };
-    default:
-      return { text: status || 'Неизвестно', color: 'default' };
-  }
-};
-
-/**
- * Форматирует приоритет тикета для отображения
- * @param {string} priority - Код приоритета
- * @returns {Object} - Объект с локализованным текстом и цветом
- */
-export const formatTicketPriority = (priority) => {
-  switch (priority) {
-    case 'low':
-      return { text: 'Низкий', color: 'success' };
-    case 'medium':
-      return { text: 'Средний', color: 'info' };
-    case 'high':
-      return { text: 'Высокий', color: 'warning' };
-    case 'urgent':
-      return { text: 'Срочный', color: 'error' };
-    default:
-      return { text: priority || 'Стандартный', color: 'info' };
-  }
 };
 
 /**
@@ -87,24 +137,24 @@ export const formatTicketCategory = (category) => {
 
 // src/utils/constants.js
 export const TICKET_STATUSES = [
-  { value: 'new', label: 'Новый', color: 'info' },
-  { value: 'in_progress', label: 'В обработке', color: 'warning' },
-  { value: 'resolved', label: 'Решён', color: 'success' },
-  { value: 'closed', label: 'Закрыт', color: 'default' },
+  { value: 'new', label: 'Жаңа', color: 'info' },
+  { value: 'in_progress', label: 'Өңделуде', color: 'warning' },
+  { value: 'resolved', label: 'Шешілді', color: 'success' },
+  { value: 'closed', label: 'Жабылды', color: 'default' },
 ];
 
 export const TICKET_PRIORITIES = [
-  { value: 'low', label: 'Низкий', color: 'success' },
-  { value: 'medium', label: 'Средний', color: 'info' },
-  { value: 'high', label: 'Высокий', color: 'warning' },
-  { value: 'urgent', label: 'Срочный', color: 'error' },
+  { value: 'low', label: 'Төмен', color: 'success' },
+  { value: 'medium', label: 'Орташа', color: 'info' },
+  { value: 'high', label: 'Жоғары', color: 'warning' },
+  { value: 'urgent', label: 'Шұғыл', color: 'error' },
 ];
 
 export const TICKET_CATEGORIES = [
-  { value: 'general', label: 'Общий вопрос' },
-  { value: 'technical', label: 'Техническая проблема' },
-  { value: 'billing', label: 'Вопрос по оплате' },
-  { value: 'feature', label: 'Запрос функционала' },
-  { value: 'bug', label: 'Отчёт об ошибке' },
-  { value: 'other', label: 'Другое' },
+  { value: 'general', label: 'Жалпы сұрақ' },
+  { value: 'technical', label: 'Техникалық мәселе' },
+  { value: 'billing', label: 'Төлем сұрағы' },
+  { value: 'feature', label: 'Функционал сұрауы' },
+  { value: 'bug', label: 'Қате туралы хабарлама' },
+  { value: 'other', label: 'Басқа' },
 ];

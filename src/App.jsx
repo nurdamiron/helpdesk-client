@@ -9,6 +9,8 @@ import TicketDetailPage from './pages/TicketDetailPage';
 import NotFoundPage from './pages/NotFoundPage';
 import ChatPage from './pages/ChatPage';
 import EmailRedirect from './pages/EmailRedirect';
+import SecurityMessage from './components/security/SecurityMessage';
+import SubmissionSuccessPage from './pages/SubmissionSuccessPage';
 
 // Создаем кастомную тему
 const theme = createTheme({
@@ -92,11 +94,13 @@ function App() {
           <Header />
           <main style={{ minHeight: 'calc(100vh - 180px)' }}>
           <Routes>
-  <Route path="/" element={<HomePage />} />
-  <Route path="/tickets/:id" element={<TicketDetailPage />} />
-  <Route path="/redirect/ticket/:id" element={<EmailRedirect />} />
-  <Route path="*" element={<NotFoundPage />} />
-</Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/tickets/:id" element={<TicketDetailPage />} />
+            <Route path="/success/:id" element={<SubmissionSuccessPage />} />
+            <Route path="/redirect/ticket/:id" element={<EmailRedirect />} />
+            <Route path="/security" element={<SecurityMessage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
           </main>
           <Footer />
         </Router>

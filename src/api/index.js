@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Get API URL from environment variables
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
 
 console.log('API URL:', API_URL); // Debug
 
@@ -39,7 +39,17 @@ api.interceptors.request.use(
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-    (response) => response.data,
+    (response) => {
+        // Возвращаем данные ответа вместе с дополнительными полями из заголовка ответа
+        const result = response.data;
+        
+        // Добавляем статусы и дополнительные поля, если они есть в ответе
+        if (response.headers && response.headers['x-email-sent'] !== undefined) {
+            result.email_sent = response.headers['x-email-sent'] === 'true';
+        }
+        
+        return result;
+    },
     async (error) => {
         const { config } = error;
         

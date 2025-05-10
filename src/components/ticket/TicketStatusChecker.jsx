@@ -1,4 +1,4 @@
-// src/components/ticket/TicketStatusChecker.jsx
+// src/components/ticket/TicketStatusChecker.jsx - Өтініш мәртебесін тексеру компоненті
 import { useState } from 'react';
 import { 
   Paper, 
@@ -18,22 +18,22 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import { ticketsApi } from '../../api/tickets';
 import { formatDate } from '../../utils/dateUtils';
 
-// Component to display found ticket information
+// Табылған өтініш туралы ақпаратты көрсететін компонент
 const TicketInfo = ({ ticket }) => {
-  // Function to get status text in Russian
+  // Статус мәтінін қазақ тілінде алу функциясы
   const getStatusText = (status) => {
     const statusMap = {
-      'new': 'Новый',
-      'open': 'Открыт',
-      'in_progress': 'В работе',
-      'pending': 'Ожидает ответа',
-      'resolved': 'Решен',
-      'closed': 'Закрыт'
+      'new': 'Жаңа',
+      'open': 'Ашық',
+      'in_progress': 'Өңделуде',
+      'pending': 'Жауап күтілуде',
+      'resolved': 'Шешілді',
+      'closed': 'Жабылды'
     };
     return statusMap[status] || status;
   };
 
-  // Function to get status color
+  // Статус түсін алу функциясы
   const getStatusColor = (status) => {
     const colorMap = {
       'new': 'info',
@@ -46,18 +46,18 @@ const TicketInfo = ({ ticket }) => {
     return colorMap[status] || 'default';
   };
 
-  // Function to get priority text in Russian
+  // Басымдық мәтінін қазақ тілінде алу функциясы
   const getPriorityText = (priority) => {
     const priorityMap = {
-      'low': 'Низкий',
-      'medium': 'Средний',
-      'high': 'Высокий',
-      'urgent': 'Срочный'
+      'low': 'Төмен',
+      'medium': 'Орташа',
+      'high': 'Жоғары',
+      'urgent': 'Шұғыл'
     };
     return priorityMap[priority] || priority;
   };
 
-  // Function to get priority color
+  // Басымдық түсін алу функциясы
   const getPriorityColor = (priority) => {
     const colorMap = {
       'low': 'success',
@@ -71,14 +71,14 @@ const TicketInfo = ({ ticket }) => {
   return (
     <Box sx={{ mt: 3 }}>
       <Typography variant="h6" gutterBottom>
-        Информация о заявке #{ticket.id}
+        Өтініш туралы ақпарат #{ticket.id}
       </Typography>
       
       <Grid container spacing={2} sx={{ mb: 2 }}>
         <Grid item xs={12} sm={6}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-              Статус:
+              Күйі:
             </Typography>
             <Chip 
               label={getStatusText(ticket.status)} 
@@ -91,7 +91,7 @@ const TicketInfo = ({ ticket }) => {
         <Grid item xs={12} sm={6}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
-              Приоритет:
+              Басымдық:
             </Typography>
             <Chip 
               label={getPriorityText(ticket.priority)} 
@@ -114,12 +114,12 @@ const TicketInfo = ({ ticket }) => {
       
       <Box sx={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
         <Typography variant="body2" color="text.secondary">
-          Дата создания: {formatDate(ticket.created_at)}
+          Құрылған күні: {formatDate(ticket.created_at)}
         </Typography>
         
         {ticket.updated_at && (
           <Typography variant="body2" color="text.secondary">
-            Последнее обновление: {formatDate(ticket.updated_at)}
+            Соңғы жаңарту: {formatDate(ticket.updated_at)}
           </Typography>
         )}
       </Box>
@@ -127,7 +127,7 @@ const TicketInfo = ({ ticket }) => {
   );
 };
 
-// Main component for checking ticket status
+// Өтініш мәртебесін тексеру үшін негізгі компонент
 const TicketStatusChecker = () => {
   const [ticketId, setTicketId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -142,7 +142,7 @@ const TicketStatusChecker = () => {
     e.preventDefault();
     
     if (!ticketId) {
-      setError('Пожалуйста, введите номер заявки');
+      setError('Өтініш нөірін енгізіңіз');
       return;
     }
     
@@ -154,12 +154,12 @@ const TicketStatusChecker = () => {
       const response = await ticketsApi.getTicketById(ticketId);
       setTicket(response.ticket);
     } catch (err) {
-      console.error('Ошибка при поиске заявки:', err);
+      console.error('Өтінішті іздеу кезінде қате:', err);
       
       if (err.status === 404) {
-        setError('Заявка с указанным номером не найдена');
+        setError('Көрсетілген нөмірмен өтініш табылмады');
       } else {
-        setError('Произошла ошибка при поиске заявки. Пожалуйста, попробуйте позже.');
+        setError('Өтінішті іздеу кезінде қате пайда болды. Кейінірек қайталап көріңіз.');
       }
     } finally {
       setLoading(false);
@@ -169,23 +169,23 @@ const TicketStatusChecker = () => {
   return (
     <Paper elevation={3} sx={{ p: 3, maxWidth: 800, mx: 'auto', mt: 4 }}>
       <Typography variant="h5" component="h2" gutterBottom>
-        Проверить статус заявки
+        Өтініш мәртебесін тексеру
       </Typography>
       
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Введите номер вашей заявки, чтобы узнать её текущий статус и детали
+        Өтінішіңіздің ағымдағы мәртебесі мен мәліметтерін білу үшін өтініш нөмірін енгізіңіз
       </Typography>
       
       <Box component="form" onSubmit={handleSubmit} noValidate>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <TextField
             fullWidth
-            label="Номер заявки"
+            label="Өтініш нөмірі"
             name="ticketId"
             value={ticketId}
             onChange={handleChange}
             variant="outlined"
-            placeholder="Например: 1234"
+            placeholder="Мысалы: 1234"
             error={!!error}
             helperText={error}
             sx={{ mr: 2 }}
@@ -199,17 +199,17 @@ const TicketStatusChecker = () => {
             startIcon={loading ? <CircularProgress size={20} /> : <SearchIcon />}
             sx={{ height: 56, flexShrink: 0 }}
           >
-            {loading ? 'Поиск...' : 'Найти'}
+            {loading ? 'Іздеу...' : 'Табу'}
           </Button>
         </Box>
       </Box>
       
-      {/* Display found ticket or message */}
+      {/* Табылған өтінішті немесе хабарламаны көрсету */}
       {ticket ? (
         <TicketInfo ticket={ticket} />
       ) : !error && !loading && (
         <Alert severity="info" sx={{ mt: 3 }}>
-          Введите номер заявки, который вы получили при регистрации обращения
+          Өтінішті тіркеу кезінде алған өтініш нөмірін енгізіңіз
         </Alert>
       )}
     </Paper>

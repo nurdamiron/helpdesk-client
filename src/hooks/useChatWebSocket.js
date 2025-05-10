@@ -28,7 +28,7 @@ const useChatWebSocket = (ticketId, userInfo = { type: 'requester' }) => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = import.meta.env.VITE_WS_URL || 
                 window.location.host || 
-                'localhost:5000';
+                'localhost:5002';
     
     // Параметры подключения
     const userId = userInfo.id || 'anonymous';

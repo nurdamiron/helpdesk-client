@@ -1,5 +1,6 @@
 // src/pages/HomePage.jsx
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Container, 
   Typography, 
@@ -12,14 +13,14 @@ import {
   Button
 } from '@mui/material';
 import {
-  Construction as ConstructionIcon,
-  Engineering as EngineeringIcon,
-  AssignmentTurnedIn as AssignmentIcon,
-  SupportAgent as SupportIcon
+  SupportAgent as SupportIcon,
+  Feedback as FeedbackIcon,
+  Lightbulb as IdeaIcon,
+  ChatBubble as ChatIcon
 } from '@mui/icons-material';
 import TicketForm from '../components/ticket/TicketForm';
 
-// Компонент для отображения услуги
+// Өтініш түрін көрсету компоненті
 const ServiceCard = ({ title, description, icon }) => {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -46,6 +47,19 @@ const ServiceCard = ({ title, description, icon }) => {
 
 const HomePage = () => {
   const [showTicketForm, setShowTicketForm] = useState(false);
+  const navigate = useNavigate();
+
+  // Обработчик успешной отправки заявки
+  const handleSubmitSuccess = (ticket) => {
+    // Перенаправляем на страницу успеха с данными о заявке
+    navigate(`/success/${ticket.id}`, { 
+      state: { 
+        ticket,
+        authorized: true,
+        emailSent: ticket.email_sent 
+      }
+    });
+  };
 
   return (
     <Box>
@@ -61,14 +75,14 @@ const HomePage = () => {
       >
         <Container>
           <Typography variant="h3" component="h1" gutterBottom>
-            Корпоративный портал
+            Ішкі өтініштер порталы
           </Typography>
           <Typography variant="h5" gutterBottom>
-            Система внутренних заявок сотрудников
+            Өтініштер, ұсыныстар және кері байланыс жүйесі
           </Typography>
           <Typography variant="body1" paragraph sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
-            Здесь вы можете оставить заявку на решение внутренних вопросов и проблем.
-            Наша команда специалистов оперативно обработает ваше обращение.
+            Мұнда сіз компания жұмысын жақсарту бойынша кез келген сұрақты, шағымды немесе ұсынысты жібере аласыз.
+            Сіздің өтінішіңізбен жауапты қызметкерлер айналысады.
           </Typography>
           <Button 
             variant="contained" 
@@ -76,44 +90,44 @@ const HomePage = () => {
             size="large"
             onClick={() => setShowTicketForm(true)}
           >
-            Создать заявку
+            Өтініш жасау
           </Button>
         </Container>
       </Box>
 
-      {/* Наши услуги */}
+      {/* Өтініш түрлері */}
       <Container sx={{ mb: 6 }}>
         <Typography variant="h4" component="h2" gutterBottom align="center">
-          Доступные сервисы
+          Өтініш түрлері
         </Typography>
         
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6} md={3}>
             <ServiceCard
-              title="Техподдержка"
-              description="Обслуживание компьютеров, настройка сети, программное обеспечение."
-              icon={<ConstructionIcon sx={{ fontSize: 40 }} />}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <ServiceCard
-              title="Хозяйственный отдел"
-              description="Ремонт помещений, мебель, кондиционеры, освещение."
-              icon={<EngineeringIcon sx={{ fontSize: 40 }} />}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <ServiceCard
-              title="Администрация"
-              description="Запросы на доступы и пропуска, вопросы к руководству."
-              icon={<AssignmentIcon sx={{ fontSize: 40 }} />}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <ServiceCard
-              title="Отдел кадров"
-              description="Кадровые документы, справки, отпуска, командировки."
+              title="Сұраныстар"
+              description="Ақпарат алу, қол жеткізу, көмеk немесе басқа ресурстар бойынша сұраныстар."
               icon={<SupportIcon sx={{ fontSize: 40 }} />}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <ServiceCard
+              title="Шағымдар"
+              description="Жұмыс мәселелері бойынша проблемалар немесе қанағаттанбаушылық туралы хабарлау."
+              icon={<FeedbackIcon sx={{ fontSize: 40 }} />}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <ServiceCard
+              title="Ұсыныстар"
+              description="Жұмыс процестері мен еңбек жағдайларын жақсарту бойынша идеялар."
+              icon={<IdeaIcon sx={{ fontSize: 40 }} />}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <ServiceCard
+              title="Кері байланыс"
+              description="Пікір алмасу және компания басшылығына арналған хабарламалар."
+              icon={<ChatIcon sx={{ fontSize: 40 }} />}
             />
           </Grid>
         </Grid>
@@ -121,20 +135,21 @@ const HomePage = () => {
 
       <Divider sx={{ mb: 6 }} />
 
-      {/* Форма заявки */}
+      {/* Өтініш формасы */}
       {showTicketForm ? (
         <Container sx={{ mb: 8 }}>
           <TicketForm 
-            onSubmitSuccess={() => setShowTicketForm(false)} 
+            onSubmitSuccess={handleSubmitSuccess} 
           />
         </Container>
       ) : (
         <Container sx={{ mb: 8, textAlign: 'center' }}>
           <Typography variant="h5" gutterBottom>
-            Нужна помощь?
+            Сіздің пікіріңіз біз үшін маңызды
           </Typography>
           <Typography variant="body1" paragraph sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
-            Заполните заявку, и наши специалисты оперативно возьмут в работу вашу проблему или запрос.
+            Біз ыңғайлы жұмыс ортасын құруға және процестерді үнемі жетілдіруге тырысамыз.
+            Сіздің өтініштеріңіз бізге жақсырақ болуға көмектеседі.
           </Typography>
           <Button 
             variant="contained" 
@@ -142,46 +157,46 @@ const HomePage = () => {
             size="large"
             onClick={() => setShowTicketForm(true)}
           >
-            Создать заявку
+            Өтініш жасау
           </Button>
         </Container>
       )}
 
-      {/* Преимущества */}
+      {/* Артықшылықтар */}
       <Box sx={{ bgcolor: 'grey.100', py: 6, mb: 6 }}>
         <Container>
           <Typography variant="h4" component="h2" gutterBottom align="center">
-            Преимущества системы
+            Біздің жұмыс қағидаттарымыз
           </Typography>
           
           <Grid container spacing={4} sx={{ mt: 2 }}>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" gutterBottom>
-                  Оперативная обработка
+                  Құпиялылық
                 </Typography>
                 <Typography variant="body2">
-                  Все заявки обрабатываются в кратчайшие сроки, с соблюдением внутренних SLA
+                  Барлық өтініштер ақпараттың құпиялылығын сақтай отырып өңделеді
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" gutterBottom>
-                  Прозрачность процессов
+                  Жеделділік
                 </Typography>
                 <Typography variant="body2">
-                  Отслеживайте статус вашей заявки и своевременно получайте уведомления
+                  Біз әр өтінішті ең қысқа мерзімде қарастырамыз
                 </Typography>
               </Box>
             </Grid>
             <Grid item xs={12} md={4}>
               <Box sx={{ textAlign: 'center' }}>
                 <Typography variant="h6" gutterBottom>
-                  Единая система
+                  Айқындылық
                 </Typography>
                 <Typography variant="body2">
-                  Все обращения фиксируются и обрабатываются в одной системе
+                  Сіз өз өтінішіңіздің мәртебесін нақты уақыт режимінде қадағалай аласыз
                 </Typography>
               </Box>
             </Grid>

@@ -1,4 +1,4 @@
-// src/components/ticket/CreateTicketForm.jsx
+// src/components/ticket/CreateTicketForm.jsx - Өтініш құру формасы
 import React, { useState } from 'react';
 import { 
   Box, 
@@ -28,35 +28,36 @@ import {
 } from '@mui/icons-material';
 import { useMutation } from '@tanstack/react-query';
 import { chatApi } from '../../api/chat';
+import SuccessMessage from './form-steps/SuccessMessage';
 
-// Категории заявок для строительной компании
+// Құрылыс компаниясының өтініш санаттары
 const TICKET_CATEGORIES = [
-  { value: 'repair', label: 'Ремонтные работы' },
+  { value: 'repair', label: 'Жөндеу жұмыстары' },
   { value: 'plumbing', label: 'Сантехника' },
   { value: 'electrical', label: 'Электрика' },
-  { value: 'construction', label: 'Строительство' },
-  { value: 'design', label: 'Проектирование' },
-  { value: 'consultation', label: 'Консультация' },
-  { value: 'estimate', label: 'Смета и расчеты' },
-  { value: 'materials', label: 'Материалы' },
-  { value: 'warranty', label: 'Гарантийный случай' },
-  { value: 'other', label: 'Другое' }
+  { value: 'construction', label: 'Құрылыс' },
+  { value: 'design', label: 'Жобалау' },
+  { value: 'consultation', label: 'Кеңес беру' },
+  { value: 'estimate', label: 'Смета және есептеулер' },
+  { value: 'materials', label: 'Материалдар' },
+  { value: 'warranty', label: 'Кепілдік жағдайы' },
+  { value: 'other', label: 'Басқа' }
 ];
 
 const TICKET_PRIORITIES = [
-  { value: 'low', label: 'Низкий' },
-  { value: 'medium', label: 'Средний' },
-  { value: 'high', label: 'Высокий' },
-  { value: 'urgent', label: 'Срочный' }
+  { value: 'low', label: 'Төмен' },
+  { value: 'medium', label: 'Орташа' },
+  { value: 'high', label: 'Жоғары' },
+  { value: 'urgent', label: 'Шұғыл' }
 ];
 
 const PROPERTY_TYPES = [
-  { value: 'apartment', label: 'Квартира' },
-  { value: 'house', label: 'Частный дом' },
-  { value: 'office', label: 'Офис' },
-  { value: 'commercial', label: 'Коммерческое помещение' },
-  { value: 'land', label: 'Земельный участок' },
-  { value: 'other', label: 'Другое' }
+  { value: 'apartment', label: 'Пәтер' },
+  { value: 'house', label: 'Жеке үй' },
+  { value: 'office', label: 'Кеңсе' },
+  { value: 'commercial', label: 'Коммерциялық үй-жай' },
+  { value: 'land', label: 'Жер телімі' },
+  { value: 'other', label: 'Басқа' }
 ];
 
 const INITIAL_FORM_STATE = {
@@ -79,11 +80,12 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [errors, setErrors] = useState({});
   const [activeStep, setActiveStep] = useState(0);
+  const [ticketCreated, setTicketCreated] = useState(null);
   
   const steps = [
-    'Контактная информация',
-    'Детали заявки',
-    'Информация об объекте'
+    'Байланыс ақпараты',
+    'Өтініш мәліметтері',
+    'Нысан туралы ақпарат'
   ];
   
   const createTicketMutation = useMutation({
@@ -119,10 +121,10 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
       return chatApi.createConversation(conversationData);
     },
     onSuccess: (data) => {
+      setTicketCreated(data);
       if (onSubmitSuccess) {
         onSubmitSuccess(data);
       }
-      resetForm();
     }
   });
   
@@ -141,35 +143,35 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
     switch (step) {
       case 0:
         if (!formData.full_name.trim()) {
-          newErrors.full_name = 'Укажите ваше имя';
+          newErrors.full_name = 'Аты-жөніңізді көрсетіңіз';
         }
         
         if (!formData.email.trim()) {
-          newErrors.email = 'Укажите email для связи';
+          newErrors.email = 'Байланыс үшін email көрсетіңіз';
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-          newErrors.email = 'Укажите корректный email';
+          newErrors.email = 'Дұрыс email көрсетіңіз';
         }
         
         if (formData.phone.trim() && !/^\+?[0-9\s\-\(\)]{10,15}$/.test(formData.phone.trim())) {
-          newErrors.phone = 'Укажите корректный номер телефона';
+          newErrors.phone = 'Дұрыс телефон нөірін көрсетіңіз';
         }
         break;
         
       case 1:
         if (!formData.subject.trim()) {
-          newErrors.subject = 'Укажите тему обращения';
+          newErrors.subject = 'Өтініш тақырыбын көрсетіңіз';
         }
         
         if (!formData.description.trim()) {
-          newErrors.description = 'Опишите вашу проблему или запрос';
+          newErrors.description = 'Мәселеңізді немесе сұрауыңызды сипаттаңыз';
         } else if (formData.description.trim().length < 10) {
-          newErrors.description = 'Описание должно содержать минимум 10 символов';
+          newErrors.description = 'Сипаттамада кемінде 10 таңба болуы керек';
         }
         break;
         
       case 2:
         if (formData.category !== 'consultation' && !formData.property_address.trim()) {
-          newErrors.property_address = 'Укажите адрес объекта';
+          newErrors.property_address = 'Нысан мекенжайын көрсетіңіз';
         }
         break;
         
@@ -192,8 +194,17 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
   };
   
   const handleSubmit = async (e) => {
+    // Предотвращаем стандартное поведение формы
     e.preventDefault();
     
+    // Явная проверка, что форма отправляется по нажатию кнопки, а не автоматически
+    const submitter = e.nativeEvent?.submitter;
+    if (!submitter || submitter.type !== 'submit') {
+      // Если форма не была отправлена нажатием кнопки "Отправить", прерываем выполнение
+      return;
+    }
+    
+    // Валидация всех шагов
     for (let i = 0; i < steps.length; i++) {
       if (!validateStep(i)) {
         setActiveStep(i);
@@ -204,7 +215,7 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
     try {
       await createTicketMutation.mutateAsync(formData);
     } catch (error) {
-      console.error('Ошибка создания заявки:', error);
+      console.error('Өтініш құру кезінде қате:', error);
     }
   };
   
@@ -212,7 +223,19 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
     setFormData(INITIAL_FORM_STATE);
     setErrors({});
     setActiveStep(0);
+    setTicketCreated(null);
   };
+  
+  // Если заявка успешно создана, показываем страницу успеха
+  if (createTicketMutation.isSuccess && ticketCreated) {
+    return (
+      <SuccessMessage 
+        ticket={ticketCreated}
+        email={formData.email}
+        onCreateNew={resetForm}
+      />
+    );
+  }
 
   return (
     <Paper elevation={3} sx={{ p: 3, maxWidth: 800, mx: 'auto', mt: 4 }}>
@@ -220,21 +243,21 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
         <Stack direction="row" alignItems="center" spacing={1} mb={2}>
           <ConstructionIcon color="primary" />
           <Typography variant="h5" component="h2">
-            Подать заявку
+            Өтініш жасау
           </Typography>
         </Stack>
         
         <Typography variant="body2" color="text.secondary" paragraph>
-          Заполните форму ниже, и наши специалисты свяжутся с вами в ближайшее время. 
-          Обязательные поля отмечены звездочкой (*).
+          Төмендегі нысанды толтырыңыз, және біздің мамандар сізбен жақын арада байланысады. 
+          Міндетті өрістер жұлдызшамен (*) белгіленген.
         </Typography>
         
-        {/* Контактная информация */}
+        {/* Байланыс ақпараты */}
         {activeStep === 0 && (
           <Card variant="outlined" sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="h6" component="h3" gutterBottom>
-                Ваши контактные данные
+                Сіздің байланыс деректеріңіз
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
@@ -242,7 +265,7 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                     required
                     fullWidth
                     name="full_name"
-                    label="Ваше полное имя *"
+                    label="Аты-жөніңіз *"
                     value={formData.full_name}
                     onChange={handleChange}
                     error={!!errors.full_name}
@@ -261,7 +284,7 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                     value={formData.email}
                     onChange={handleChange}
                     error={!!errors.email}
-                    helperText={errors.email || "На этот адрес будет отправлено подтверждение"}
+                    helperText={errors.email || "Осы мекенжайға растау хабарламасы жіберіледі"}
                     placeholder="example@mail.com"
                   />
                 </Grid>
@@ -282,7 +305,7 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                 
                 <Grid item xs={12}>
                   <FormControl component="fieldset">
-                    <FormLabel component="legend">Предпочтительный способ связи</FormLabel>
+                    <FormLabel component="legend">Қалаулы байланыс әдісі</FormLabel>
                     <RadioGroup
                       row
                       name="preferred_contact"
@@ -298,8 +321,8 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                 
                 <Grid item xs={12}>
                   <Typography variant="body2" color="text.secondary">
-                    Мы гарантируем конфиденциальность ваших персональных данных. 
-                    Они будут использованы только для обработки вашей заявки.
+                    Біз сіздің жеке деректеріңіздің құпиялылығына кепілдік береміз. 
+                    Олар тек сіздің өтінішіңізді өңдеу үшін ғана пайдаланылады.
                   </Typography>
                 </Grid>
               </Grid>
@@ -307,7 +330,7 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
           </Card>
         )}
         
-        {/* Детали заявки */}
+        {/* Өтініш мәліметтері */}
         {activeStep === 1 && (
           <Card variant="outlined" sx={{ mb: 3 }}>
             <CardContent>
@@ -317,23 +340,23 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                     required
                     fullWidth
                     name="subject"
-                    label="Тема заявки *"
+                    label="Өтініш тақырыбы *"
                     value={formData.subject}
                     onChange={handleChange}
                     error={!!errors.subject}
                     helperText={errors.subject}
-                    placeholder="Например: Ремонт ванной комнаты"
+                    placeholder="Мысалы: Жуынатын бөлмені жөндеу"
                   />
                 </Grid>
                 
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>Категория</InputLabel>
+                    <InputLabel>Санат</InputLabel>
                     <Select
                       name="category"
                       value={formData.category}
                       onChange={handleChange}
-                      label="Категория"
+                      label="Санат"
                     >
                       {TICKET_CATEGORIES.map(category => (
                         <MenuItem key={category.value} value={category.value}>
@@ -346,12 +369,12 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                 
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>Приоритет</InputLabel>
+                    <InputLabel>Басымдық</InputLabel>
                     <Select
                       name="priority"
                       value={formData.priority}
                       onChange={handleChange}
-                      label="Приоритет"
+                      label="Басымдық"
                     >
                       {TICKET_PRIORITIES.map(priority => (
                         <MenuItem key={priority.value} value={priority.value}>
@@ -367,14 +390,14 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                     required
                     fullWidth
                     name="description"
-                    label="Описание работ *"
+                    label="Жұмыс сипаттамасы *"
                     multiline
                     rows={5}
                     value={formData.description}
                     onChange={handleChange}
                     error={!!errors.description}
                     helperText={errors.description}
-                    placeholder="Подробно опишите, какие работы вам необходимы"
+                    placeholder="Сізге қандай жұмыстар қажет екенін толық сипаттаңыз"
                   />
                 </Grid>
               </Grid>
@@ -382,19 +405,19 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
           </Card>
         )}
         
-        {/* Информация об объекте */}
+        {/* Нысан туралы ақпарат */}
         {activeStep === 2 && (
           <Card variant="outlined" sx={{ mb: 3 }}>
             <CardContent>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>Тип объекта</InputLabel>
+                    <InputLabel>Нысан түрі</InputLabel>
                     <Select
                       name="property_type"
                       value={formData.property_type}
                       onChange={handleChange}
-                      label="Тип объекта"
+                      label="Нысан түрі"
                     >
                       {PROPERTY_TYPES.map(type => (
                         <MenuItem key={type.value} value={type.value}>
@@ -409,7 +432,7 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                   <TextField
                     fullWidth
                     name="property_area"
-                    label="Площадь (кв.м)"
+                    label="Аудан (шаршы м.)"
                     type="number"
                     value={formData.property_area}
                     onChange={handleChange}
@@ -424,12 +447,12 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                     required={formData.category !== 'consultation'}
                     fullWidth
                     name="property_address"
-                    label="Адрес объекта *"
+                    label="Нысан мекенжайы *"
                     value={formData.property_address}
                     onChange={handleChange}
                     error={!!errors.property_address}
-                    helperText={errors.property_address || "Укажите полный адрес объекта"}
-                    placeholder="Город, улица, дом, квартира"
+                    helperText={errors.property_address || "Нысанның толық мекенжайын көрсетіңіз"}
+                    placeholder="Қала, көше, үй, пәтер"
                   />
                 </Grid>
               </Grid>
@@ -437,27 +460,21 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
             </Card>
         )}
         
-        {/* Уведомления об ошибках и успехе */}
+        {/* Қателер мен сәттілік туралы хабарламалар */}
         {createTicketMutation.isError && (
           <Alert severity="error" sx={{ mt: 3 }}>
-            Не удалось создать заявку: {createTicketMutation.error?.message || 'Произошла ошибка'}
+            Өтініш құру мүмкін болмады: {createTicketMutation.error?.message || 'Қате пайда болды'}
           </Alert>
         )}
         
-        {createTicketMutation.isSuccess && (
-          <Alert severity="success" sx={{ mt: 3 }}>
-            Заявка успешно создана! Мы свяжемся с вами в ближайшее время.
-          </Alert>
-        )}
-        
-        {/* Кнопки навигации */}
+        {/* Навигация түймелері */}
         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
           <Button
             variant="outlined"
             onClick={handleBack}
             disabled={activeStep === 0 || createTicketMutation.isLoading}
           >
-            Назад
+            Артқа
           </Button>
           
           <Box>
@@ -467,7 +484,7 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                 onClick={handleNext}
                 disabled={createTicketMutation.isLoading}
               >
-                Далее
+                Келесі
               </Button>
             ) : (
               <Button
@@ -477,7 +494,7 @@ const CreateTicketForm = ({ onSubmitSuccess }) => {
                 endIcon={createTicketMutation.isLoading ? <CircularProgress size={20} /> : <SendIcon />}
                 disabled={createTicketMutation.isLoading}
               >
-                {createTicketMutation.isLoading ? 'Отправка...' : 'Отправить заявку'}
+                {createTicketMutation.isLoading ? 'Жіберілуде...' : 'Өтініш жіберу'}
               </Button>
             )}
           </Box>

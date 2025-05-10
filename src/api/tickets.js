@@ -37,7 +37,13 @@ export const ticketsApi = {
    */
   createTicket: async (ticketData) => {
     try {
-      return await api.post('/tickets', ticketData);
+      const response = await api.post('/tickets', ticketData);
+      return {
+        status: response.status || 'success',
+        message: response.message || 'Заявка успешно создана',
+        email_sent: response.email_sent, // Статус отправки email
+        ticket: response.ticket
+      };
     } catch (error) {
       console.error('Error creating ticket:', error);
       throw error;

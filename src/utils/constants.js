@@ -1,54 +1,54 @@
 // src/utils/constants.js
 
-// Статусы тикетов
+// Тикет статустары
 export const TICKET_STATUSES = [
-    { value: 'new', label: 'Новая заявка', color: 'info' },
-    { value: 'in_progress', label: 'В работе', color: 'warning' },
-    { value: 'pending', label: 'Ожидание материалов/решения', color: 'secondary' },
-    { value: 'inspection', label: 'На проверке', color: 'primary' },
-    { value: 'resolved', label: 'Выполнено', color: 'success' },
-    { value: 'closed', label: 'Закрыто', color: 'default' },
+    { value: 'new', label: 'Жаңа өтініш', color: 'info' },
+    { value: 'in_progress', label: 'Өңделуде', color: 'warning' },
+    { value: 'pending', label: 'Материалдар/шешім күтілуде', color: 'secondary' },
+    { value: 'inspection', label: 'Тексеруде', color: 'primary' },
+    { value: 'resolved', label: 'Орындалды', color: 'success' },
+    { value: 'closed', label: 'Жабылды', color: 'default' },
   ];
   
-  // Приоритеты заявок
+  // Өтініш басымдықтары
   export const TICKET_PRIORITIES = [
-    { value: 'low', label: 'Низкий', color: 'success' },
-    { value: 'medium', label: 'Средний', color: 'info' },
-    { value: 'high', label: 'Высокий', color: 'warning' },
-    { value: 'urgent', label: 'Срочный', color: 'error' },
+    { value: 'low', label: 'Төмен', color: 'success' },
+    { value: 'medium', label: 'Орташа', color: 'info' },
+    { value: 'high', label: 'Жоғары', color: 'warning' },
+    { value: 'urgent', label: 'Шұғыл', color: 'error' },
   ];
   
-  // Категории заявок для строительной компании
+  // Құрылыс компаниясының өтініш санаттары
   export const TICKET_CATEGORIES = [
-    { value: 'repair', label: 'Ремонтные работы' },
+    { value: 'repair', label: 'Жөндеу жұмыстары' },
     { value: 'plumbing', label: 'Сантехника' },
     { value: 'electrical', label: 'Электрика' },
-    { value: 'construction', label: 'Строительство' },
-    { value: 'design', label: 'Проектирование' },
-    { value: 'consultation', label: 'Консультация' },
-    { value: 'estimate', label: 'Смета и расчеты' },
-    { value: 'materials', label: 'Материалы' },
-    { value: 'warranty', label: 'Гарантийный случай' },
-    { value: 'other', label: 'Другое' },
+    { value: 'construction', label: 'Құрылыс' },
+    { value: 'design', label: 'Жобалау' },
+    { value: 'consultation', label: 'Кеңес беру' },
+    { value: 'estimate', label: 'Смета және есептеулер' },
+    { value: 'materials', label: 'Материалдар' },
+    { value: 'warranty', label: 'Кепілдік жағдайы' },
+    { value: 'other', label: 'Басқа' },
   ];
   
-  // Типы объектов
+  // Нысан түрлері
   export const PROPERTY_TYPES = [
-    { value: 'apartment', label: 'Квартира' },
-    { value: 'house', label: 'Частный дом' },
-    { value: 'office', label: 'Офис' },
-    { value: 'commercial', label: 'Коммерческое помещение' },
-    { value: 'land', label: 'Земельный участок' },
-    { value: 'other', label: 'Другое' },
+    { value: 'apartment', label: 'Пәтер' },
+    { value: 'house', label: 'Жеке үй' },
+    { value: 'office', label: 'Кеңсе' },
+    { value: 'commercial', label: 'Коммерциялық үй-жай' },
+    { value: 'land', label: 'Жер телімі' },
+    { value: 'other', label: 'Басқа' },
   ];
   
-  // Услуги строительной компании
+  // Құрылыс компаниясының қызметтері
   export const SERVICES = [
-    { value: 'construction', label: 'Строительство' },
-    { value: 'renovation', label: 'Ремонт' },
-    { value: 'design', label: 'Проектирование' },
-    { value: 'maintenance', label: 'Обслуживание' },
-    { value: 'consultation', label: 'Консультация' },
+    { value: 'construction', label: 'Құрылыс' },
+    { value: 'renovation', label: 'Жөндеу' },
+    { value: 'design', label: 'Жобалау' },
+    { value: 'maintenance', label: 'Қызмет көрсету' },
+    { value: 'consultation', label: 'Кеңес беру' },
   ];
   
   // src/utils/formatters.js
@@ -56,20 +56,20 @@ export const TICKET_STATUSES = [
   import { ru } from 'date-fns/locale';
   
   /**
-   * Форматирует дату и время
-   * @param {string|Date} date - Дата для форматирования
-   * @param {string} formatString - Строка формата (по умолчанию DD.MM.YYYY HH:mm)
-   * @returns {string} - Отформатированная дата
+   * Күн мен уақытты пішімдеу
+   * @param {string|Date} date - Пішімделетін күн
+   * @param {string} formatString - Пішім жолы (әдепкі бойынша DD.MM.YYYY HH:mm)
+   * @returns {string} - Пішімделген күн
    */
   export const formatDate = (date, formatString = 'dd.MM.yyyy HH:mm') => {
-    if (!date) return 'Не указано';
+    if (!date) return 'Көрсетілмеген';
     return format(new Date(date), formatString, { locale: ru });
   };
   
   /**
-   * Форматирует время, прошедшее с указанной даты, например "5 минут назад"
-   * @param {string|Date} date - Дата
-   * @returns {string} - Отформатированная строка временного промежутка
+   * Көрсетілген күннен бері өткен уақытты пішімдейді, мысалы "5 минут бұрын"
+   * @param {string|Date} date - Күн
+   * @returns {string} - Пішімделген уақыт аралығы
    */
   export const formatRelativeTime = (date) => {
     if (!date) return '';
@@ -77,49 +77,49 @@ export const TICKET_STATUSES = [
   };
   
   /**
-   * Форматирует статус заявки для отображения
-   * @param {string} status - Код статуса
-   * @returns {Object} - Объект с локализованным текстом и цветом
+   * Өтініш статусын көрсету үшін пішімдейді
+   * @param {string} status - Статус коды
+   * @returns {Object} - Локализацияланған мәтіні мен түсі бар нысан
    */
   export const formatTicketStatus = (status) => {
     const statusObj = TICKET_STATUSES.find(s => s.value === status);
-    return statusObj || { text: status || 'Неизвестно', color: 'default' };
+    return statusObj || { text: status || 'Белгісіз', color: 'default' };
   };
   
   /**
-   * Форматирует приоритет заявки для отображения
-   * @param {string} priority - Код приоритета
-   * @returns {Object} - Объект с локализованным текстом и цветом
+   * Өтініш басымдығын көрсету үшін пішімдейді
+   * @param {string} priority - Басымдық коды
+   * @returns {Object} - Локализацияланған мәтіні мен түсі бар нысан
    */
   export const formatTicketPriority = (priority) => {
     const priorityObj = TICKET_PRIORITIES.find(p => p.value === priority);
-    return priorityObj || { text: priority || 'Стандартный', color: 'info' };
+    return priorityObj || { text: priority || 'Стандартты', color: 'info' };
   };
   
   /**
-   * Форматирует категорию заявки для отображения
-   * @param {string} category - Код категории
-   * @returns {string} - Локализованный текст категории
+   * Өтініш санатын көрсету үшін пішімдейді
+   * @param {string} category - Санат коды
+   * @returns {string} - Локализацияланған санат мәтіні
    */
   export const formatTicketCategory = (category) => {
     const categoryObj = TICKET_CATEGORIES.find(c => c.value === category);
-    return categoryObj?.label || category || 'Другое';
+    return categoryObj?.label || category || 'Басқа';
   };
   
   /**
-   * Форматирует тип объекта для отображения
-   * @param {string} propertyType - Код типа объекта
-   * @returns {string} - Локализованный текст типа объекта
+   * Нысан түрін көрсету үшін пішімдейді
+   * @param {string} propertyType - Нысан түрінің коды
+   * @returns {string} - Локализацияланған нысан түрінің мәтіні
    */
   export const formatPropertyType = (propertyType) => {
     const typeObj = PROPERTY_TYPES.find(t => t.value === propertyType);
-    return typeObj?.label || propertyType || 'Другое';
+    return typeObj?.label || propertyType || 'Басқа';
   };
   
   /**
-   * Форматирует цену в рублях
-   * @param {number} value - Сумма
-   * @returns {string} - Отформатированная сумма с символом валюты
+   * Бағаны рубльмен пішімдейді
+   * @param {number} value - Сома
+   * @returns {string} - Валюта таңбасы бар пішімделген сома
    */
   export const formatCurrency = (value) => {
     if (value === undefined || value === null) return '—';
@@ -131,9 +131,9 @@ export const TICKET_STATUSES = [
   };
   
   /**
-   * Форматирует строку в формат для URL (slug)
-   * @param {string} text - Исходный текст
-   * @returns {string} - Форматированная строка для URL
+   * Жолды URL форматына (slug) пішімдейді
+   * @param {string} text - Бастапқы мәтін
+   * @returns {string} - URL үшін пішімделген жол
    */
   export const slugify = (text) => {
     const translitMap = {

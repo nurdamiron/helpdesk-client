@@ -1,4 +1,4 @@
-// src/components/ticket/form-steps/PropertyInfoStep.jsx
+// src/components/ticket/form-steps/PropertyInfoStep.jsx - Мүлік туралы ақпарат қадамы
 import React from 'react';
 import {
   Grid,
@@ -12,47 +12,47 @@ import {
 } from '@mui/material';
 import { LocationOn as LocationIcon } from '@mui/icons-material';
 
-// Типы помещений
+// Үй-жай түрлері
 const PROPERTY_TYPES = [
-  { value: 'office', label: 'Офисное помещение' },
-  { value: 'meeting_room', label: 'Переговорная' },
-  { value: 'restroom', label: 'Санузел' },
-  { value: 'kitchen', label: 'Кухня/столовая' },
-  { value: 'hallway', label: 'Коридор/холл' },
-  { value: 'server_room', label: 'Серверная' },
-  { value: 'warehouse', label: 'Склад' },
-  { value: 'other', label: 'Другое' },
+  { value: 'office', label: 'Кеңсе үй-жайы' },
+  { value: 'meeting_room', label: 'Келіссөз бөлмесі' },
+  { value: 'restroom', label: 'Дәретхана' },
+  { value: 'kitchen', label: 'Ас үй/асхана' },
+  { value: 'hallway', label: 'Дәліз/холл' },
+  { value: 'server_room', label: 'Сервер бөлмесі' },
+  { value: 'warehouse', label: 'Қойма' },
+  { value: 'other', label: 'Басқа' },
 ];
 
 /**
- * Компонент шага формы с информацией о местоположении проблемы
+ * Мәселенің орналасуы туралы ақпаратпен форма қадамының компоненті
  * 
- * @param {Object} formData - Данные формы
- * @param {Function} onChange - Обработчик изменения полей
- * @param {Object} errors - Объект с ошибками валидации
+ * @param {Object} formData - Форма деректері
+ * @param {Function} onChange - Өрістердің өзгеруін өңдеуші
+ * @param {Object} errors - Валидация қателері бар нысан
  */
 const PropertyInfoStep = ({ formData, onChange, errors }) => {
   return (
     <>
       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <LocationIcon sx={{ mr: 1 }} />
-        Расположение
+        Орналасуы
         <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-          (Необязательно)
+          (Міндетті емес)
         </Typography>
       </Typography>
       
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <FormControl fullWidth>
-            <InputLabel id="property-type-label">Тип помещения</InputLabel>
+            <InputLabel id="property-type-label">Үй-жай түрі</InputLabel>
             <Select
               labelId="property-type-label"
               id="property_type"
               name="property_type"
               value={formData.property_type}
               onChange={onChange}
-              label="Тип помещения"
+              label="Үй-жай түрі"
             >
               {PROPERTY_TYPES.map(option => (
                 <MenuItem key={option.value} value={option.value}>
@@ -68,10 +68,10 @@ const PropertyInfoStep = ({ formData, onChange, errors }) => {
             fullWidth
             id="property_area"
             name="property_area"
-            label="Номер кабинета/комнаты"
+            label="Кабинет/бөлме нөірі"
             value={formData.property_area}
             onChange={onChange}
-            placeholder="Например: 205"
+            placeholder="Мысалы: 205"
           />
         </Grid>
         
@@ -80,20 +80,20 @@ const PropertyInfoStep = ({ formData, onChange, errors }) => {
             fullWidth
             id="property_address"
             name="property_address"
-            label="Адрес или дополнительная информация о расположении"
+            label="Мекенжай немесе орналасқан жері туралы қосымша ақпарат"
             value={formData.property_address}
             onChange={onChange}
             error={!!errors.property_address}
             helperText={errors.property_address}
-            placeholder="Например: 2 этаж, северное крыло, рядом с кабинетом директора"
+            placeholder="Мысалы: 2 қабат, солтүстік қанат, директор кабинетінің жанында"
           />
         </Grid>
         
         <Grid item xs={12}>
           <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', color: 'info.contrastText', borderRadius: 1 }}>
             <Typography variant="body2">
-              Точное указание расположения поможет ускорить процесс обработки заявки. 
-              Если проблема наблюдается в нескольких местах, укажите это в описании заявки.
+              Орналасқан жерді дәл көрсету өтінішті өңдеу процесін жеделдетуге көмектеседі. 
+              Егер мәселе бірнеше жерде байқалса, мұны өтініш сипаттамасында көрсетіңіз.
             </Typography>
           </Box>
         </Grid>
